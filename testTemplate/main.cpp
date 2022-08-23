@@ -17,13 +17,19 @@ extern void testSimpleConditionItem();
 extern void testSimpleRangeItem();
 extern void testSimpleIncludeItem();
 extern void testSimpleDefineItem();
+extern void testSimpleLenItem();
+extern void testSimpleWithItem();
+extern void testSimpleFunctionItem();
 
 int main() {
-    testSimpleDefineItem();
-    testSimpleIncludeItem();
-    testSimpleRangeItem();
-    testSimpleConditionItem();
-    testSimpleObjectItem();
+    testSimpleFunctionItem();
+    //testSimpleWithItem();
+    //testSimpleDefineItem();
+    //testSimpleIncludeItem();
+    //testSimpleRangeItem();
+    //testSimpleConditionItem();
+    //testSimpleObjectItem();
+    //testSimpleLenItem();
     return 0;
 }
 
