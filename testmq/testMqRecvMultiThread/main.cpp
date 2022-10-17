@@ -20,7 +20,10 @@
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1);
+CountDownLatch latch1 = createCountDownLatch(1);
+CountDownLatch latch2 = createCountDownLatch(1);
+CountDownLatch latch3 = createCountDownLatch(1);
+
 int total = 1024*32;
 
 std::atomic<int> count(0);
@@ -33,7 +36,7 @@ DECLARE_CLASS(CountHandler) IMPLEMENTS(Handler) {
 public:
     void handleMessage(Message) {
         int v = count;
-        printf("total is %d \n",v);
+        printf("v1 is %d,v2 is %d,v3 is %d \n",v1,v2,v3);
         sendEmptyMessageDelayed(1,1000);
     }
 };
@@ -41,12 +44,12 @@ public:
 DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
 public:
     _ConnectionListener(int t) {
-        handler = createCountHandler();
-        handler->sendEmptyMessageDelayed(1,1000);
+        //handler = createCountHandler();
+        //handler->sendEmptyMessageDelayed(1,1000);
         type = t;
     }
 
-    bool onEvent(String channel,ByteArray data) {
+    bool onMessage(String channel,ByteArray data) {
         String str = data->toString();
         if(str->equals("hello world")) {
             count++;
@@ -55,23 +58,40 @@ public:
         switch(type) {
             case 1:
                 v1++;
+                if(v1 == total) {
+                    latch1->countDown();
+                }
             break;
 
             case 2:
                 v2++;
+                if(v2 == total) {
+                    latch2->countDown();
+                }
             break;
 
             case 3:
                 v3++;
+                if(v3 == total) {
+                    latch3->countDown();
+                }
             break;
         }
 
-        if(count == total*3) {
-            TEST_OK("testMqSendLoop case1");
-            latch->countDown();
-        }
 
         return true;
+    }
+
+    bool onDisconnect() {
+        return false;
+    }
+
+    bool onConnect() {
+        return false;
+    }
+
+    bool onDetach(String channel) {
+        return false;
     }
 
 private:
@@ -80,40 +100,54 @@ private:
 };
 
 int main() {
-    
+
     int pid = fork();
 
     if(pid == 0) {
         sleep(1);
-        MqConnection connection = createMqConnection("tcp://127.0.0.1:1260");
-        connection->connect();
-        connection->subscribe("info",createConnectionListener(1));
-        connection->subscribe("info",createConnectionListener(2));
-        connection->subscribe("info",createConnectionListener(3));
-        latch->await();
-        printf("v1 is %d,v2 is %d,v3 is %d \n",v1,v2,v3);
+        MqConnection connection1 = createMqConnection("tcp://127.0.0.1:1800",createConnectionListener(1));
+        connection1->connect();
+        connection1->subscribe("info");
+
+        MqConnection connection2 = createMqConnection("tcp://127.0.0.1:1800",createConnectionListener(2));
+        connection2->connect();
+        connection2->subscribe("info");
+
+        MqConnection connection3 = createMqConnection("tcp://127.0.0.1:1800",createConnectionListener(3));
+        connection3->connect();
+        connection3->subscribe("info");
+
+        CountHandler handler = createCountHandler();
+        handler->sendEmptyMessageDelayed(1,1000);
+
+        latch1->await();
+        latch2->await();
+        latch3->await();
+        
+        if(v1 != total || v2 != total || v3 != total) {
+            TEST_FAIL("testMqRecvMultiThread case1");
+        } else {
+            TEST_OK("testMqRecvMultiThread case100");
+        }
 
     } else {
         MqCenterBuilder builder = createMqCenterBuilder();
-        builder->setUrl("tcp://127.0.0.1:1260");
+        builder->setUrl("tcp://127.0.0.1:1800");
         MqCenter center = builder->build();
-        MqConnection connection = createMqConnection("tcp://127.0.0.1:1260");
+        MqConnection connection = createMqConnection("tcp://127.0.0.1:1800");
         connection->connect();
         sleep(2);
-        printf("start !!! \n");
-        String str = createString("hello world");
+        String str = createString("hello world");   
         ByteArray data = str->toByteArray();
 
         for(int i = 0;i < total;i++) {
-            connection->publish("info",data,st(MqMessage)::PublishOneShot);
+            connection->publish("info",data,st(MqMessage)::Publish);
         }
 
         int result = 0;
-        printf("start wait!!! \n");
         wait(&result);
-        TEST_OK("testMqSendLoop case100");
+        TEST_OK("testMqRecvMultiThread case101");
     }
 
     return 0;
 }
-

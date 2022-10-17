@@ -19,7 +19,11 @@
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1024*32);
+CountDownLatch latch1 = createCountDownLatch(1);
+CountDownLatch latch2 = createCountDownLatch(1);
+
+int count = 0;
+int detach = 0;
 
 DECLARE_CLASS(StudentInfo) IMPLEMENTS(Serializable){
 public:
@@ -31,12 +35,8 @@ public:
 DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
 public:
     bool onMessage(String channel,ByteArray data) {
-        StudentInfo info = createStudentInfo();
-        info->deserialize(data);
-        if(!info->name->equals("wang") && info->age != 12) {
-            TEST_FAIL("testmqsend case1,name is %s,age is %d",info->name->toChars(),info->age);
-        }
-        latch->countDown();
+        count++;
+        latch1->countDown();
         return true;
     }
 
@@ -51,7 +51,10 @@ public:
     }
 
     bool onDetach(String channel) {
-      //TODO
+      detach = 1;
+      if(!channel->equals("info")) {
+        TEST_FAIL("testMqUnsubscribe detach case2");
+      }
       return false;
     }
 };
@@ -63,7 +66,6 @@ public:
     }
 
     void handleMessage(Message msg) {
-        printf("latch count is %d \n",latch->getCount());
         this->sendEmptyMessageDelayed(1,1*1000);
     }
 
@@ -81,10 +83,22 @@ int main() {
         MqConnection connection = createMqConnection("tcp://127.0.0.1:1280",createConnectionListener());
         connection->connect();
         connection->subscribe("info");
-        MyHandler h = createMyHandler(latch);
-        h->sendEmptyMessageDelayed(1,1*1000);
-        latch->await();
-        TEST_OK("testmqsend case100");
+        latch1->await();
+        connection->unSubscribe("info");
+        latch2->await(1000*5);
+
+        if(count != 1) {
+          TEST_FAIL("testMqUnsubscribe case1");
+        } else {
+          TEST_OK("testMqUnsubscribe case100");
+        }
+
+        if(detach != 1) {
+          TEST_FAIL("testMqUnsubscribe case2");
+        } else {
+          TEST_OK("testMqUnsubscribe case101");
+        }
+
     } else {
         MqCenterBuilder builder = createMqCenterBuilder();
         builder->setUrl("tcp://127.0.0.1:1280");
@@ -93,12 +107,18 @@ int main() {
         connection->connect();
         //start send
         sleep(2);
-        for(int i = 0; i <1024*32;i++) {
-            StudentInfo student = createStudentInfo();
-            student->name = createString("wang");
-            student->age = 12;
-            connection->publish("info",student,st(MqMessage)::PublishOneShot);
-        }
+        //for(int i = 0; i <1024*32;i++) {
+        StudentInfo student = createStudentInfo();
+        student->name = createString("wang");
+        student->age = 12;
+        connection->publish("info",student,st(MqMessage)::PublishOneShot);
+        //}
+        sleep(2);
+        StudentInfo student2 = createStudentInfo();
+        student2->name = createString("wang");
+        student2->age = 12;
+        connection->publish("info",student2,st(MqMessage)::PublishOneShot);
+
         sleep(5);
     }
 
