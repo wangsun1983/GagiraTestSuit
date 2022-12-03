@@ -15,46 +15,52 @@
 #include "TestLog.hpp"
 #include "MqCenterBuilder.hpp"
 #include "Handler.hpp"
+#include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
 DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
 public:
-    bool onMessage(String channel,ByteArray data) {
-        return true;
+    int onMessage(String channel,ByteArray data) {
+        return 0;
     }
 
-    bool onDisconnect() {
+    void onDisconnect() {
       //TODO
-      return false;
+      //return false;
     }
 
-    bool onConnect() {
+    void onConnect() {
       //TODO
-      return false;
+      //return false;
     }
 
-    bool onDetach(String channel) {
+    void onDetach(String channel) {
       //TODO
-      return false;
+      //return false;
     }
 };
 
 int main() {
 
     int pid = fork();
+    int port = getEnvPort();
+    String url = createString("tcp://127.0.0.1:")->append(createString(port));
 
     if(pid != 0) {
         sleep(1);
-        MqConnection connection = createMqConnection("tcp://127.0.0.1:1280",createConnectionListener());
+        MqConnection connection = createMqConnection(url,createConnectionListener());
         connection->connect();
-        connection->unSubscribe("info");
+        connection->unSubscribeChannel("info");
         TEST_OK("testMqUnsubscribeWithNoSubscribe case100");
     } else {
         MqCenterBuilder builder = createMqCenterBuilder();
-        builder->setUrl("tcp://127.0.0.1:1280");
+        builder->setUrl(url);
         MqCenter center = builder->build();
+        center->start();
+        port++;
+        setEnvPort(port);
         sleep(5);
     }
 

@@ -16,6 +16,7 @@
 #include "TestLog.hpp"
 #include "MqCenterBuilder.hpp"
 #include "Handler.hpp"
+#include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
@@ -38,7 +39,7 @@ public:
         handler->sendEmptyMessageDelayed(1,1000);
     }
 
-    bool onMessage(String channel,ByteArray data) {
+    int onMessage(String channel,ByteArray data) {
         String str = data->toString();
         if(str->equals("hello world")) {
             total--;
@@ -49,19 +50,19 @@ public:
             latch->countDown();
         }
 
-        return true;
+        return 1;
     }
 
-    bool onDisconnect() {
-        return true;
+    void onDisconnect() {
+        //return true;
     }
     
-    bool onConnect() {
-        return true;
+    void onConnect() {
+        //return true;
     }
 
-    bool onDetach(String channel) {
-        return true;
+    void onDetach(String channel) {
+        //return true;
     }
 
 private:
@@ -70,16 +71,18 @@ private:
 
 int main() {
     
+    int port = getEnvPort();
+    String url = createString("tcp://127.0.0.1:")->append(createString(port));
     int pid = fork();
 
     if(pid == 0) {
         sleep(1);
-        MqConnection connection = createMqConnection("tcp://127.0.0.1:1270",createConnectionListener());
+        MqConnection connection = createMqConnection(url,createConnectionListener());
         connection->connect();
         int count = 0;
-        connection->subscribe("info");
+        connection->subscribeChannel("info");
         while(count < 1024) {
-            connection->unSubscribe("info");
+            connection->unSubscribeChannel("info");
             count++;
         }
         sleep(3);
@@ -91,9 +94,10 @@ int main() {
         }
     } else {
         MqCenterBuilder builder = createMqCenterBuilder();
-        builder->setUrl("tcp://127.0.0.1:1270");
+        builder->setUrl(url);
         MqCenter center = builder->build();
-        MqConnection connection = createMqConnection("tcp://127.0.0.1:1270");
+        center->start();
+        MqConnection connection = createMqConnection(url);
         connection->connect();
         sleep(3);
         
@@ -101,12 +105,14 @@ int main() {
         ByteArray data = str->toByteArray();
 
         for(int i = 0;i < total;i++) {
-            connection->publish("info",data,st(MqMessage)::PublishOneShot);
+            connection->publishMessage("info",data,st(MqMessage)::OneShotFlag);
         }
 
         int result = 0;
         wait(&result);
         TEST_OK("testMqUnSubscribeMore case101");
+        port++;
+        setEnvPort(port);
     }
 
     return 0;

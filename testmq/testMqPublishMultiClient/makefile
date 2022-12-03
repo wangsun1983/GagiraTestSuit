@@ -6,7 +6,7 @@ ccompiler = clang
 cppcompiler = clang++
 clangcompiler = clang++
 
-gcc = g++
+gcc = clang++
 
 cflags = -fpic \
 		-I ../../../3rdparty/Obotcha/include/util/concurrent/ \
@@ -17,6 +17,9 @@ cflags = -fpic \
 		-I ../../../3rdparty/Obotcha/include/io/ \
 		-I ../../../3rdparty/Obotcha/include/util/ \
 		-I ../../../3rdparty/Obotcha/include/net/ \
+		-I ../../../3rdparty/Obotcha/include/net/websocket/ \
+		-I ../../../3rdparty/Obotcha/include/net/socket/ \
+		-I ../../../3rdparty/Obotcha/include/net/http/ \
 		-I ../../../3rdparty/Obotcha/include/security/ \
 		-I ../../../3rdparty/Obotcha/include/process/ \
 		-I ../../../3rdparty/Obotcha/include/external/iniparser/ \

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "Controller.hpp"
 #include "Server.hpp"
@@ -20,7 +21,7 @@
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1024*32);
+CountDownLatch latch = createCountDownLatch(1);
 
 DECLARE_CLASS(StudentInfo) IMPLEMENTS(Serializable){
 public:
@@ -35,7 +36,7 @@ public:
         StudentInfo info = createStudentInfo();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
-            TEST_FAIL("testmqsend case1,name is %s,age is %d",info->name->toChars(),info->age);
+            TEST_FAIL("testMqSendStick case1,name is %s,age is %d",info->name->toChars(),info->age);
         }
         latch->countDown();
         return 0;
@@ -81,32 +82,31 @@ int main() {
     int pid = fork();
 
     if(pid != 0) {
-        sleep(1);
-        MqConnection connection = createMqConnection(url,createConnectionListener());
-        connection->connect();
-        connection->subscribeChannel("info");
-        MyHandler h = createMyHandler(latch);
-        h->sendEmptyMessageDelayed(1,1*1000);
-        latch->await();
-        setEnvPort(++port);
-        TEST_OK("testmqsend case100");
-    } else {
         MqCenterBuilder builder = createMqCenterBuilder();
         builder->setUrl(url);
         MqCenter center = builder->build();
-        int ret = center->start();
-        printf("mqsend ret is %d \n",ret);
+        center->start();
         MqConnection connection = createMqConnection(url);
         connection->connect();
-        //start send
-        sleep(2);
-        for(int i = 0; i <1024*32;i++) {
-            StudentInfo student = createStudentInfo();
-            student->name = createString("wang");
-            student->age = 12;
-            connection->publishMessage("info",student,st(MqMessage)::OneShotFlag);
-        }
-        sleep(5);
+        
+        StudentInfo student = createStudentInfo();
+        student->name = createString("wang");
+        student->age = 12;
+        printf("send stick message");
+        connection->publishStickMessage("info","abc",student);
+
+        int result = 0;
+        wait(&result);
+        TEST_OK("testMqSendStick case101");
+    } else {
+      sleep(1);
+      MqConnection connection = createMqConnection(url,createConnectionListener());
+      connection->connect();
+      connection->subscribeChannel("info");
+      latch->await();
+      TEST_OK("testMqSendStick case100");
+      port++;
+      setEnvPort(port);
     }
 
     return 0;

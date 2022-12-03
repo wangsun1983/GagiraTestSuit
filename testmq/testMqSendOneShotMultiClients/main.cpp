@@ -16,6 +16,7 @@
 #include "MqCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "AtomicInteger.hpp"
+#include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
@@ -33,51 +34,58 @@ public:
 
 DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
 public:
-    bool onEvent(String channel,ByteArray data) {
+    int onMessage(String channel,ByteArray data) {
         StudentInfo info = createStudentInfo();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
             TEST_FAIL("testMqSendOneShotMultiClients case1,name is %s,age is %d",info->name->toChars(),info->age);
         }
         times++;
-        return false;
+        return 1;
     }
+
+    void onDisconnect(){};
+    void onConnect(){};
+    void onDetach(String channel){};
 
     int times = 0;
 };
 
 int main() {
     
+    int port = getEnvPort();
+    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+
     MqCenterBuilder builder = createMqCenterBuilder();
-    builder->setUrl("tcp://127.0.0.1:1320")
-           ->setRedeliveryInterval(3);
+    builder->setUrl(url);
 
     MqCenter center = builder->build();
+    center->start();
     
     ConnectionListener listener1 = createConnectionListener();
-    MqConnection connection1 = createMqConnection("tcp://127.0.0.1:1320");
+    MqConnection connection1 = createMqConnection(url,listener1);
     connection1->connect();
-    connection1->subscribe("info",listener1);
+    connection1->subscribeChannel("info");
 
     ConnectionListener listener2 = createConnectionListener();
-    MqConnection connection2 = createMqConnection("tcp://127.0.0.1:1320");
+    MqConnection connection2 = createMqConnection(url,listener2);
     connection2->connect();
-    connection2->subscribe("info",listener2);
+    connection2->subscribeChannel("info");
 
     ConnectionListener listener3 = createConnectionListener();
-    MqConnection connection3 = createMqConnection("tcp://127.0.0.1:1320");
+    MqConnection connection3 = createMqConnection(url,listener3);
     connection3->connect();
-    connection3->subscribe("info",listener3);
+    connection3->subscribeChannel("info");
+    usleep(1000 * 100);
 
     StudentInfo student = createStudentInfo();
     student->name = createString("wang");
     student->age = 12;
-    //connection->publish("info",student,st(MqMessage)::PublishOneShot);
     for(int i = 0;i < 1024*32;i++) {
-        connection1->publish("info",student,st(MqMessage)::PublishOneShot);
+        connection1->publishMessage("info",student,st(MqMessage)::OneShotFlag);
     }
 
-    sleep(15);
+    sleep(30);
 
     int total = listener1->times + listener2->times + listener3->times;
     if(total != 1024*32) {
@@ -85,6 +93,8 @@ int main() {
                     total,listener1->times,listener2->times,listener3->times,1024*32);
     }
 
+    port++;
+    setEnvPort(port);
     TEST_OK("testSendOneShotMultiClients case100");
     return 0;
 }

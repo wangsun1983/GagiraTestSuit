@@ -15,12 +15,11 @@
 #include "TestLog.hpp"
 #include "MqCenterBuilder.hpp"
 #include "Handler.hpp"
-#include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1024*32);
+CountDownLatch latch = createCountDownLatch(4);
 
 DECLARE_CLASS(StudentInfo) IMPLEMENTS(Serializable){
 public:
@@ -38,7 +37,7 @@ public:
             TEST_FAIL("testmqsend case1,name is %s,age is %d",info->name->toChars(),info->age);
         }
         latch->countDown();
-        return 0;
+        return -1;
     }
 
     void onDisconnect() {
@@ -57,56 +56,35 @@ public:
     }
 };
 
-DECLARE_CLASS(MyHandler) IMPLEMENTS (Handler) {
-public:
-    _MyHandler(CountDownLatch l) {
-        latch = l;
-    }
-
-    void handleMessage(Message msg) {
-        printf("latch count is %d \n",latch->getCount());
-        this->sendEmptyMessageDelayed(1,1*1000);
-    }
-
-private:
-    CountDownLatch latch;
-};
-
-
 int main() {
-
-    int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
 
     int pid = fork();
 
     if(pid != 0) {
-        sleep(1);
-        MqConnection connection = createMqConnection(url,createConnectionListener());
+        usleep(1000*100);
+        MqConnection connection = createMqConnection("tcp://127.0.0.1:1320",createConnectionListener());
         connection->connect();
         connection->subscribeChannel("info");
-        MyHandler h = createMyHandler(latch);
-        h->sendEmptyMessageDelayed(1,1*1000);
-        latch->await();
-        setEnvPort(++port);
+        latch->await(1000*5);
+        if(latch->getCount() != 0) {
+            TEST_FAIL("testmqsendAcknowledge case2,count is %d",latch->getCount());
+        }
         TEST_OK("testmqsend case100");
     } else {
         MqCenterBuilder builder = createMqCenterBuilder();
-        builder->setUrl(url);
+        builder->setUrl("tcp://127.0.0.1:1320");
         MqCenter center = builder->build();
         int ret = center->start();
-        printf("mqsend ret is %d \n",ret);
-        MqConnection connection = createMqConnection(url);
+        //printf("mqsend ret is %d \n",ret);
+        MqConnection connection = createMqConnection("tcp://127.0.0.1:1320");
         connection->connect();
         //start send
-        sleep(2);
-        for(int i = 0; i <1024*32;i++) {
-            StudentInfo student = createStudentInfo();
-            student->name = createString("wang");
-            student->age = 12;
-            connection->publishMessage("info",student,st(MqMessage)::OneShotFlag);
-        }
-        sleep(5);
+        usleep(1000*200);
+        StudentInfo student = createStudentInfo();
+        student->name = createString("wang");
+        student->age = 12;
+        connection->publishMessage("info",student,st(MqMessage)::AcknowledgeFlag);
+        sleep(6);
     }
 
     return 0;

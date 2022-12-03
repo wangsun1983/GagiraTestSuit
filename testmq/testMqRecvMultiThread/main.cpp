@@ -16,6 +16,7 @@
 #include "TestLog.hpp"
 #include "MqCenterBuilder.hpp"
 #include "Handler.hpp"
+#include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
@@ -49,7 +50,7 @@ public:
         type = t;
     }
 
-    bool onMessage(String channel,ByteArray data) {
+    int onMessage(String channel,ByteArray data) {
         String str = data->toString();
         if(str->equals("hello world")) {
             count++;
@@ -78,20 +79,19 @@ public:
             break;
         }
 
-
-        return true;
+        return 0;
     }
 
-    bool onDisconnect() {
-        return false;
+    void onDisconnect() {
+        
     }
 
-    bool onConnect() {
-        return false;
+    void onConnect() {
+        
     }
 
-    bool onDetach(String channel) {
-        return false;
+    void onDetach(String channel) {
+        
     }
 
 private:
@@ -101,21 +101,24 @@ private:
 
 int main() {
 
+    int port = getEnvPort();
+    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+
     int pid = fork();
 
     if(pid == 0) {
         sleep(1);
-        MqConnection connection1 = createMqConnection("tcp://127.0.0.1:1800",createConnectionListener(1));
+        MqConnection connection1 = createMqConnection(url,createConnectionListener(1));
         connection1->connect();
-        connection1->subscribe("info");
+        connection1->subscribeChannel("info");
 
-        MqConnection connection2 = createMqConnection("tcp://127.0.0.1:1800",createConnectionListener(2));
+        MqConnection connection2 = createMqConnection(url,createConnectionListener(2));
         connection2->connect();
-        connection2->subscribe("info");
+        connection2->subscribeChannel("info");
 
-        MqConnection connection3 = createMqConnection("tcp://127.0.0.1:1800",createConnectionListener(3));
+        MqConnection connection3 = createMqConnection(url,createConnectionListener(3));
         connection3->connect();
-        connection3->subscribe("info");
+        connection3->subscribeChannel("info");
 
         CountHandler handler = createCountHandler();
         handler->sendEmptyMessageDelayed(1,1000);
@@ -132,20 +135,24 @@ int main() {
 
     } else {
         MqCenterBuilder builder = createMqCenterBuilder();
-        builder->setUrl("tcp://127.0.0.1:1800");
+        builder->setUrl(url);
         MqCenter center = builder->build();
-        MqConnection connection = createMqConnection("tcp://127.0.0.1:1800");
+        center->start();
+        MqConnection connection = createMqConnection(url);
         connection->connect();
         sleep(2);
         String str = createString("hello world");   
         ByteArray data = str->toByteArray();
 
         for(int i = 0;i < total;i++) {
-            connection->publish("info",data,st(MqMessage)::Publish);
+            connection->publishMessage("info",data,st(MqMessage)::Publish);
         }
 
         int result = 0;
         wait(&result);
+
+        port++;
+        setEnvPort(port);
         TEST_OK("testMqRecvMultiThread case101");
     }
 

@@ -16,12 +16,15 @@
 #include "TestLog.hpp"
 #include "MqCenterBuilder.hpp"
 #include "Handler.hpp"
+#include "Process.hpp"
+#include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
 int total = 1024*32;
 CountDownLatch latch = createCountDownLatch(1);
+CountDownLatch exitlatch = createCountDownLatch(1);
 
 DECLARE_CLASS(CountHandler) IMPLEMENTS(Handler) {
 public:
@@ -52,7 +55,14 @@ public:
         handler->sendEmptyMessageDelayed(1,1000);
     }
 
-    bool onEvent(String channel,ByteArray data) {
+    int onMessage(String channel,ByteArray data) {
+        if(channel->equals("close")) {
+             exitlatch->countDown();
+             return 1;
+        }
+
+        //printf("accept message pid is %d \n",st(Process)::myPid());
+
         Student info = createStudent();
         info->deserialize(data);
 
@@ -69,8 +79,12 @@ public:
             latch->countDown();
             TEST_OK("MqSendDiffClass case2");
         }
-        return true;
+        return 1;
     }
+
+    void onDisconnect(){}
+    void onConnect(){}
+    void onDetach(String channel){}
 
 private:
     CountHandler handler;
@@ -95,23 +109,30 @@ private:
 int main() {
     
     int pid = fork();
+    int port = getEnvPort();
+    String url = createString("tcp://127.0.0.1:")->append(createString(port));
 
     if(pid != 0) {
         sleep(1);
-        MqConnection connection = createMqConnection("tcp://127.0.0.1:1250");
+        MqConnection connection = createMqConnection(url,createConnectionListener());
         connection->connect();
-        connection->subscribe("info",createConnectionListener());
+        connection->subscribeChannel("info");
         MyHandler h = createMyHandler(latch);
         h->sendEmptyMessageDelayed(1,1*1000);
         latch->await();
+        connection->publishMessage(createString("close"),createString("abc"));
     } else {
         MqCenterBuilder builder = createMqCenterBuilder();
-        builder->setUrl("tcp://127.0.0.1:1250");
+        builder->setUrl(url);
         MqCenter center = builder->build();
-        MqConnection connection = createMqConnection("tcp://127.0.0.1:1250");
+        center->start();
+        MqConnection connection = createMqConnection(url);
         connection->connect();
+
+        connection->subscribeChannel("close");
         sleep(2);
         //start send
+        int i = 100;
         for(int i = 0; i <total;i++) {
             Student student = createStudent();
             student->classno = i;
@@ -119,11 +140,13 @@ int main() {
             Person p = createPerson();
             p->age = i;
             student->data = p->serialize();
-            connection->publish("info",student,st(MqMessage)::PublishOneShot);
+            connection->publishMessage("info",student,st(MqMessage)::OneShotFlag);
         }
 
-        int result = 0;
-        wait(&result);
+        exitlatch->await();
+
+        port++;
+        setEnvPort(port);
         TEST_OK("testmqsendDiffClass case100");
     }
 
