@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "Controller.hpp"
 #include "Server.hpp"
@@ -35,7 +36,7 @@ public:
         StudentInfo info = createStudentInfo();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
-            TEST_FAIL("testmqsend case1,name is %s,age is %d",info->name->toChars(),info->age);
+            TEST_FAIL("testmqsendPersistMsg case1,name is %s,age is %d",info->name->toChars(),info->age);
         }
         latch->countDown();
         return 0;
@@ -55,8 +56,35 @@ public:
       //TODO
       //return false;
     }
+};
 
-    void onSustain(int code,String msg){}
+AtomicInteger persistentCount = createAtomicInteger(0);
+DECLARE_CLASS(PersistentConnectionListener) IMPLEMENTS(MqConnectionListener) {
+public:
+    int onMessage(String channel,ByteArray data) {
+        StudentInfo info = createStudentInfo();
+        info->deserialize(data);
+        if(!info->name->equals("wang") && info->age != 12) {
+            TEST_FAIL("testmqsendPersistMsg case1,name is %s,age is %d",info->name->toChars(),info->age);
+        }
+        persistentCount->incrementAndGet();
+        return 0;
+    }
+
+    void onDisconnect() {
+      //TODO
+      //return false;
+    }
+
+    void onConnect() {
+      //TODO
+      //return false;
+    }
+
+    void onDetach(String channel) {
+      //TODO
+      //return false;
+    }
 };
 
 DECLARE_CLASS(MyHandler) IMPLEMENTS (Handler) {
@@ -91,7 +119,7 @@ int main() {
         h->sendEmptyMessageDelayed(1,1*1000);
         latch->await();
         setEnvPort(++port);
-        TEST_OK("testmqsend case100");
+        TEST_OK("testmqsendPersistMsg case100");
     } else {
         MqCenterBuilder builder = createMqCenterBuilder();
         builder->setUrl(url);
@@ -100,15 +128,27 @@ int main() {
         printf("mqsend ret is %d \n",ret);
         MqConnection connection = createMqConnection(url);
         connection->connect();
+
+        MqConnection dataconnection = createMqConnection(url,createPersistentConnectionListener());
+        dataconnection->connect();
+        dataconnection->subscribePersistenceChannel();
         //start send
         sleep(2);
         for(int i = 0; i <1024*32;i++) {
             StudentInfo student = createStudentInfo();
             student->name = createString("wang");
             student->age = 12;
-            connection->publishMessage("info",student,st(MqMessage)::OneShotFlag);
+            connection->publishMessage("info",student,st(MqMessage)::OneShotFlag|st(MqMessage)::PersistFlag);
         }
         sleep(5);
+
+        int result;
+        wait(&result);
+
+        if(persistentCount->get() != 1024*32) {
+            TEST_FAIL("testmqsendPersistMsg case3 count is %d",persistentCount->get());
+        }
+        TEST_OK("testmqsendPersistMsg case101");
     }
 
     return 0;

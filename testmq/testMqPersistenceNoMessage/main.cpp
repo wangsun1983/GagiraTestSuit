@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "Controller.hpp"
 #include "Server.hpp"
@@ -35,7 +36,7 @@ public:
         StudentInfo info = createStudentInfo();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
-            TEST_FAIL("testmqsend case1,name is %s,age is %d",info->name->toChars(),info->age);
+            TEST_FAIL("testmqsendPersist no Msg case1,name is %s,age is %d",info->name->toChars(),info->age);
         }
         latch->countDown();
         return 0;
@@ -55,8 +56,35 @@ public:
       //TODO
       //return false;
     }
+};
 
-    void onSustain(int code,String msg){}
+AtomicInteger persistentCount = createAtomicInteger(0);
+DECLARE_CLASS(PersistentConnectionListener) IMPLEMENTS(MqConnectionListener) {
+public:
+    int onMessage(String channel,ByteArray data) {
+        StudentInfo info = createStudentInfo();
+        info->deserialize(data);
+        if(!info->name->equals("wang") && info->age != 12) {
+            TEST_FAIL("testmqsendPersist no Msg case1,name is %s,age is %d",info->name->toChars(),info->age);
+        }
+        persistentCount->incrementAndGet();
+        return 0;
+    }
+
+    void onDisconnect() {
+      //TODO
+      //return false;
+    }
+
+    void onConnect() {
+      //TODO
+      //return false;
+    }
+
+    void onDetach(String channel) {
+      //TODO
+      //return false;
+    }
 };
 
 DECLARE_CLASS(MyHandler) IMPLEMENTS (Handler) {
@@ -83,16 +111,6 @@ int main() {
     int pid = fork();
 
     if(pid != 0) {
-        sleep(1);
-        MqConnection connection = createMqConnection(url,createConnectionListener());
-        connection->connect();
-        connection->subscribeChannel("info");
-        MyHandler h = createMyHandler(latch);
-        h->sendEmptyMessageDelayed(1,1*1000);
-        latch->await();
-        setEnvPort(++port);
-        TEST_OK("testmqsend case100");
-    } else {
         MqCenterBuilder builder = createMqCenterBuilder();
         builder->setUrl(url);
         MqCenter center = builder->build();
@@ -100,6 +118,10 @@ int main() {
         printf("mqsend ret is %d \n",ret);
         MqConnection connection = createMqConnection(url);
         connection->connect();
+
+        MqConnection dataconnection = createMqConnection(url,createPersistentConnectionListener());
+        dataconnection->connect();
+        dataconnection->subscribePersistenceChannel();
         //start send
         sleep(2);
         for(int i = 0; i <1024*32;i++) {
@@ -109,6 +131,24 @@ int main() {
             connection->publishMessage("info",student,st(MqMessage)::OneShotFlag);
         }
         sleep(5);
+
+        int result;
+        wait(&result);
+
+        if(persistentCount->get() != 0) {
+            TEST_FAIL("testmqsendPersist no Msg case3 count is %d",persistentCount->get());
+        }
+        TEST_OK("testmqsendPersist no Msg case101");
+    } else {
+        sleep(1);
+        MqConnection connection = createMqConnection(url,createConnectionListener());
+        connection->connect();
+        connection->subscribeChannel("info");
+        MyHandler h = createMyHandler(latch);
+        h->sendEmptyMessageDelayed(1,1*1000);
+        latch->await();
+        setEnvPort(++port);
+        TEST_OK("testmqsendPersist no Msg case100");
     }
 
     return 0;
