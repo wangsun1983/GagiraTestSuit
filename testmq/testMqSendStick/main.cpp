@@ -56,6 +56,8 @@ public:
       //TODO
       //return false;
     }
+
+    void onSustain(int code,String msg){}
 };
 
 DECLARE_CLASS(MyHandler) IMPLEMENTS (Handler) {

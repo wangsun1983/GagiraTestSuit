@@ -47,6 +47,7 @@ public:
     void onDisconnect(){};
     void onConnect(){};
     void onDetach(String channel){};
+    void onSustain(int code,String msg){}
 
     int times = 0;
 };
@@ -81,8 +82,10 @@ int main() {
     StudentInfo student = createStudentInfo();
     student->name = createString("wang");
     student->age = 12;
+    auto param = createMqMessageParam();
+    param->setFlags(st(MqMessage)::OneShotFlag);
     for(int i = 0;i < 1024*32;i++) {
-        connection1->publishMessage("info",student,st(MqMessage)::OneShotFlag);
+        connection1->publishMessage("info",student,param);
     }
 
     sleep(30);

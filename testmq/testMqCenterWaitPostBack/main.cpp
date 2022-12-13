@@ -53,6 +53,7 @@ public:
     }
 
     void onSustain(int code,String msg) {
+        printf("on sustain \n");
         if(code != st(MqSustainMessage)::WaitForPostBack) {
             TEST_FAIL("testMqCenterWaitPostBack case1");
         }
@@ -63,7 +64,7 @@ public:
 int main() {
 
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = createString("tcp://127.0.0.1:")->append(createString(1110));
 
     MqCenterBuilder builder = createMqCenterBuilder();
     builder->setUrl(url);
@@ -81,7 +82,8 @@ int main() {
     StudentInfo student = createStudentInfo();
     student->name = createString("wang");
     student->age = 12;
-    connection->publishMessage("info",student,st(MqMessage)::OneShotFlag);
+    connection->publishMessage("info",student,
+        createMqMessageParam()->setFlags(st(MqMessage)::OneShotFlag)->build());
 
     latch->await();
 

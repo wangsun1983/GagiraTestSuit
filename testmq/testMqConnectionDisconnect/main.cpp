@@ -43,6 +43,10 @@ public:
       //TODO
       //return false;
     }
+
+     void onSustain(int code,String msg) {
+        
+     }
 };
 
 int main() {

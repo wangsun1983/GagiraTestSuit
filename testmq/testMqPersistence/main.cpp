@@ -56,6 +56,8 @@ public:
       //TODO
       //return false;
     }
+
+    void onSustain(int code,String msg){}
 };
 
 AtomicInteger persistentCount = createAtomicInteger(0);
@@ -85,6 +87,8 @@ public:
       //TODO
       //return false;
     }
+
+    void onSustain(int code,String msg){}
 };
 
 DECLARE_CLASS(MyHandler) IMPLEMENTS (Handler) {
@@ -138,7 +142,9 @@ int main() {
             StudentInfo student = createStudentInfo();
             student->name = createString("wang");
             student->age = 12;
-            connection->publishMessage("info",student,st(MqMessage)::OneShotFlag|st(MqMessage)::PersistFlag);
+            MqMessageParam param = createMqMessageParam();
+            param->setFlags(st(MqMessage)::OneShotFlag|st(MqMessage)::PersistFlag);
+            connection->publishMessage("info",student,param);
         }
         sleep(5);
 

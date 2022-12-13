@@ -85,6 +85,7 @@ public:
     void onDisconnect(){}
     void onConnect(){}
     void onDetach(String channel){}
+    void onSustain(int code,String msg){}
 
 private:
     CountHandler handler;
@@ -140,7 +141,8 @@ int main() {
             Person p = createPerson();
             p->age = i;
             student->data = p->serialize();
-            connection->publishMessage("info",student,st(MqMessage)::OneShotFlag);
+            connection->publishMessage("info",student,
+                createMqMessageParam()->setFlags(st(MqMessage)::OneShotFlag)->build());
         }
 
         exitlatch->await();

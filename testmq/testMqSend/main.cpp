@@ -106,7 +106,8 @@ int main() {
             StudentInfo student = createStudentInfo();
             student->name = createString("wang");
             student->age = 12;
-            connection->publishMessage("info",student,st(MqMessage)::OneShotFlag);
+            connection->publishMessage("info",student,
+                createMqMessageParam()->setFlags(st(MqMessage)::OneShotFlag)->build());
         }
         sleep(5);
     }

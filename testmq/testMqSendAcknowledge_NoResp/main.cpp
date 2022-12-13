@@ -54,6 +54,8 @@ public:
       //TODO
       //return false;
     }
+
+    void onSustain(int code,String msg){}
 };
 
 int main() {
@@ -83,7 +85,8 @@ int main() {
         StudentInfo student = createStudentInfo();
         student->name = createString("wang");
         student->age = 12;
-        connection->publishMessage("info",student,st(MqMessage)::AcknowledgeFlag);
+        connection->publishMessage("info",student,
+            createMqMessageParam()->setFlags(st(MqMessage)::AcknowledgeFlag)->build());
         sleep(6);
     }
 

@@ -65,6 +65,8 @@ public:
         //return true;
     }
 
+    void onSustain(int code,String msg){}
+
 private:
     CountHandler handler;
 };
@@ -103,9 +105,10 @@ int main() {
         
         String str = createString("hello world");
         ByteArray data = str->toByteArray();
-
+        auto param = createMqMessageParam();
+        param->setFlags(st(MqMessage)::OneShotFlag);
         for(int i = 0;i < total;i++) {
-            connection->publishMessage("info",data,st(MqMessage)::OneShotFlag);
+            connection->publishMessage("info",data,param);
         }
 
         int result = 0;

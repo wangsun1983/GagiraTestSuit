@@ -94,6 +94,8 @@ public:
         
     }
 
+    void onSustain(int code,String msg){}
+
 private:
     CountHandler handler;
     int type;
@@ -143,9 +145,11 @@ int main() {
         sleep(2);
         String str = createString("hello world");   
         ByteArray data = str->toByteArray();
+        MqMessageParam param = createMqMessageParam();
+        param->setFlags(st(MqMessage)::Publish);
 
         for(int i = 0;i < total;i++) {
-            connection->publishMessage("info",data,st(MqMessage)::Publish);
+            connection->publishMessage("info",data,param);
         }
 
         int result = 0;

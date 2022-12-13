@@ -16,12 +16,10 @@
 #include "MqCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
-#include "MqDLQMessage.hpp"
-#include "System.hpp"
+#include "TimeWatcher.hpp"
 
 using namespace obotcha;
 using namespace gagira;
-
 
 CountDownLatch latch = createCountDownLatch(1);
 
@@ -32,41 +30,25 @@ public:
     DECLARE_REFLECT_FIELD(StudentInfo,name,age);
 };
 
-DECLARE_CLASS(DLQListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
-        MqDLQMessage message = createMqDLQMessage();
-        message->deserialize(data);
-        if(message->getCode() != st(MqDLQMessage)::NoClient) {
-            TEST_FAIL("test MqDLQ send case1");
-        }
-
-        long current = st(System)::currentTimeMillis();
-        long time = message->getPointTime();
-        if(current - time > 10 || current - time < -5) {
-            TEST_FAIL("test MqDLQ send case2");
-        }
-
-        //printf("token is %s \n",message->getToken()->toChars());
-
-        MqMessage mqMessage = st(MqMessage)::generateMessage(message->getData());
         StudentInfo info = createStudentInfo();
-        info->deserialize(mqMessage->getData());
+        info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
-            TEST_FAIL("test MqDLQ send case3");
+            TEST_FAIL("testMqSendDelayed case1,name is %s,age is %d",info->name->toChars(),info->age);
         }
-
         latch->countDown();
-        return 1;
+        return 0;
     }
 
     void onDisconnect() {
-      //gDisconnect = 100;
+      //TODO
       //return false;
     }
 
     void onConnect() {
-      // gConnect = 200;
+      //TODO
       //return false;
     }
 
@@ -75,33 +57,38 @@ public:
       //return false;
     }
 
-    void onSustain(int code,String msg) {
-
-    }
+    void onSustain(int code,String msg){}
 };
 
 int main() {
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(1414));
+    String url = createString("tcp://127.0.0.1:")->append(createString(1464));
     MqCenterBuilder builder = createMqCenterBuilder();
     builder->setUrl(url);
     MqCenter center = builder->build();
     int ret = center->start();
-
-
-    MqConnection connection = createMqConnection(url,createDLQListener());
+    MqConnection connection = createMqConnection(url,createConnectionListener());
     connection->connect();
-    connection->subscribeDLQChannel();
+    connection->subscribeChannel("info");
 
-    usleep(1000*50);
-    MqConnection connection2 = createMqConnection(url);
-    connection2->connect();
     StudentInfo student = createStudentInfo();
     student->name = createString("wang");
     student->age = 12;
-    connection2->publishMessage("info",student);
-    usleep(1000 * 50);
+    MqMessageParam param = createMqMessageParam();
+    param->setDelayInterval(300);
+    TimeWatcher watch = createTimeWatcher();
+    MqConnection connection2 = createMqConnection(url);
+    connection2->connect();
+
+    watch->start();
+    connection2->publishMessage("info",student,param);
     latch->await();
-    TEST_OK("test MqDLQ send case100");
+    long waitresult = watch->stop();
+
+    if(waitresult > 310 || waitresult < 300) {
+        TEST_FAIL("testMqSendDelayed case2,waitresult is %d",waitresult);
+    }
+
+    TEST_OK("testMqSendDelayed case100");
     return 0;
 }

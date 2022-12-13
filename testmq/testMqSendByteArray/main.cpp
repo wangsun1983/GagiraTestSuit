@@ -39,6 +39,7 @@ public:
     void onDisconnect(){}
     void onConnect(){}
     void onDetach(String channel){}
+    void onSustain(int code,String msg){}
 };
 
 int main() {
@@ -70,9 +71,11 @@ int main() {
             array[i] = i%255;
         }
 
+        MqMessageParam param = createMqMessageParam();
+        param->setFlags(st(MqMessage)::OneShotFlag|st(MqMessage)::AcknowledgeFlag);
         connection->publishMessage("info",
                                     array,
-                                    st(MqMessage)::OneShotFlag|st(MqMessage)::AcknowledgeFlag);
+                                    param);
 
         sleep(5);
         port++;

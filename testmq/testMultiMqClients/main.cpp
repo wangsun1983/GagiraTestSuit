@@ -64,6 +64,8 @@ public:
         //return true;
     }
 
+    void onSustain(int code,String msg){}
+
 private:
     CountHandler handler;
 };

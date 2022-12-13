@@ -56,6 +56,8 @@ public:
     void onDetach(String channel) {
     }
 
+    void onSustain(int code,String msg){}
+
     int times = 0;
 };
 
@@ -100,7 +102,7 @@ int main() {
     countLatch->await(1000*30);
 
     int total = listener1->times + listener2->times + listener3->times;
-    if(total != 1024*32*3) {
+    if(total != 1024*32*2) {
         TEST_FAIL("testSendOneShotMultiClients case1,total is %d,l1 is %d,l2 is %d,l3 is %d,expected result is %d",
                     total,listener1->times,listener2->times,listener3->times,1024*32);
     }
