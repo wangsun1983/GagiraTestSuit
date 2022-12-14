@@ -95,7 +95,7 @@ int main() {
         student->name = createString("wang");
         student->age = 12;
         printf("send stick message");
-        connection->publishStickMessage("info","abc",student);
+        connection->publishStickMessage("info",student);
 
         int result = 0;
         wait(&result);
