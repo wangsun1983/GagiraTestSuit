@@ -21,6 +21,7 @@
 using namespace obotcha;
 using namespace gagira;
 
+CountDownLatch latch = createCountDownLatch(1);
 
 DECLARE_CLASS(SimpleGetController) IMPLEMENTS(Controller) {
 public:
@@ -29,7 +30,7 @@ public:
         if(!value->equals("100")) {
             TEST_FAIL("testSimpleHttpGet case1");
         }
-
+        latch->countDown();
         return nullptr;
     }
 };
@@ -39,13 +40,15 @@ int main() {
     Server server = createServer();
     server->setAddress(createInet4Address(port));
     server->start();
-
     SimpleGetController getController = createSimpleGetController();
 
-    InjectController(st(HttpMethod)::Get,"/simpleget",getController,get);
+    InjectController(st(HttpMethod)::Get,"/simpleget/{value}",getController,get);
 
-    server->waitForExit();
-
+    latch->await();
+    server->close();
+    
+    port++;
+    setEnvPort(port);
     TEST_OK("testSimpleHttpGet case100");
 
     return 0;

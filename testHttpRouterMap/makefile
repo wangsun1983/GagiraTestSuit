@@ -38,6 +38,7 @@ cflags = -fpic \
 		-I ../../framework/include/ \
 		-I ../../framework/config/include/ \
 		-I ../../framework/template/include/ \
+		-I ../common/ \
 		-g \
 		-std=c++14 \
 		-fsanitize=address \
