@@ -13,9 +13,11 @@ using namespace obotcha;
 using namespace gagira;
 
 extern void testRestfulUrl();
+extern void testRestfulUrl2();
 
 int main() {
     testRestfulUrl();
+    testRestfulUrl2();
     return 0;
 }
 
