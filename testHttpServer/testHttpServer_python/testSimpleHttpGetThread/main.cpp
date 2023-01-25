@@ -21,28 +21,20 @@
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(2);
+CountDownLatch latch = createCountDownLatch(1);
 bool isGetHit = false;
 bool isGet2Hit = false;
+AtomicInteger mValue = createAtomicInteger(0);
 
 DECLARE_CLASS(SimpleGetController) IMPLEMENTS(Controller) {
 public:
     HttpResponseEntity get() {
         String value = GetStringParam(value);
-        if(!value->equals("100")) {
-            TEST_FAIL("testSimpleHttpGet case1");
-        }
-        isGetHit = true;
-        latch->countDown();
+        mValue->addAndGet(value->toInteger()->toValue());
         return nullptr;
     }
 
-    HttpResponseEntity get2() {
-        String value = GetStringParam(value);
-        if(!value->equals("200")) {
-            TEST_FAIL("testSimpleHttpGet case2");
-        }
-        isGet2Hit = true;
+    HttpResponseEntity complete() {
         latch->countDown();
         return nullptr;
     }
@@ -56,18 +48,24 @@ int main() {
     SimpleGetController getController = createSimpleGetController();
 
     InjectController(st(HttpMethod)::Get,"/simpleget/{value}",getController,get);
-    InjectController(st(HttpMethod)::Get,"/simpleget2/{value}",getController,get2);
+    InjectController(st(HttpMethod)::Get,"/complete/",getController,complete);
 
     latch->await();
     server->close();
     
-    if(!isGetHit || !isGet2Hit) {
-        TEST_FAIL("testSimpleHttpGet case80");
+    int sum = 0;
+    for(int i = 0; i < 32;i++) {
+        sum += i;
+    }
+
+    sum = sum * 32;
+    if(sum != mValue->get()) {
+        TEST_FAIL("testSimpleHttpGet thread case1,mValue is %d,sum is %d",mValue->get(),sum);    
     }
 
     port++;
     setEnvPort(port);
-    TEST_OK("testSimpleHttpGet case100");
+    TEST_OK("testSimpleHttpGet thread case100");
 
     return 0;
 }
