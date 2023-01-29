@@ -22,6 +22,8 @@ using namespace obotcha;
 using namespace gagira;
 
 CountDownLatch latch = createCountDownLatch(2);
+bool isGetHit = false;
+bool isCompleteHit = false;
 
 DECLARE_CLASS(SimpleGetController) IMPLEMENTS(Controller) {
 public:
@@ -31,11 +33,13 @@ public:
             TEST_FAIL("testSimpleHttpGet case1");
         }
         latch->countDown();
+        isGetHit = true;
         return nullptr;
     }
 
     WsResponseEntity complete() {
         latch->countDown();
+        isCompleteHit = true;
         return nullptr;
     }
 };
@@ -47,7 +51,7 @@ int main() {
     server->setWsAddress(createInet4Address(port));
     
     SimpleGetController getController = createSimpleGetController();
-    
+
     server->start();
     InjectWsController("simpleget",getController,get);
     InjectWsController("complete",getController,complete);
@@ -58,6 +62,10 @@ int main() {
     
     port++;
     setEnvPort(port);
+
+    if(!isGetHit || !isCompleteHit) {
+        TEST_FAIL("testSimpleHttpGet case1");
+    }
     TEST_OK("testSimpleHttpGet case100");
 
     return 0;

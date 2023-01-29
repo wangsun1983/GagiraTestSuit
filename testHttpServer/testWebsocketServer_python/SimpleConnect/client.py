@@ -16,6 +16,6 @@ ws.close()
 url = "ws://127.0.0.1:" + str(getEnvPort()) + "/complete"
 ws = websocket.WebSocket()
 ws.connect(url)
-msg = "Hello, World"
+msg = "He"
 ws.send(msg)
 ws.close()
