@@ -37,7 +37,8 @@ cflags = -fpic \
 		-I ../../../3rdparty/Obotcha/include/external/glog/ \
 		-I ../../../framework/include/ \
 		-I ../../../framework/template/include/ \
-		-I ../../../framework/mq/include/ \
+		-I ../../../framework/distribution/include/ \
+		-I ../../../framework/config/include/ \
 		-I ../../common/ \
 		-g \
 		-std=c++14 \

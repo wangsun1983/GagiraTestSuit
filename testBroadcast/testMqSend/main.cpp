@@ -16,6 +16,7 @@
 #include "MqCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
+#include "Thread.hpp"
 
 using namespace obotcha;
 using namespace gagira;
@@ -76,13 +77,11 @@ private:
 
 
 int main() {
-
     int port = getEnvPort();
     String url = createString("tcp://127.0.0.1:")->append(createString(port));
-
-    int pid = fork();
-
-    if(pid != 0) {
+    port++;
+    
+    Thread t1 = createThread([&url] {
         sleep(1);
         MqConnection connection = createMqConnection(url,createConnectionListener());
         connection->connect();
@@ -90,9 +89,10 @@ int main() {
         MyHandler h = createMyHandler(latch);
         h->sendEmptyMessageDelayed(1,1*1000);
         latch->await();
-        setEnvPort(++port);
         TEST_OK("testmqsend case100");
-    } else {
+    });
+        
+    Thread t2 = createThread([&url] {
         MqCenterBuilder builder = createMqCenterBuilder();
         builder->setUrl(url);
         MqCenter center = builder->build();
@@ -110,7 +110,15 @@ int main() {
                 createMqMessageParam()->setFlags(st(MqMessage)::OneShotFlag)->build());
         }
         sleep(5);
-    }
-
+    });
+    
+    t1->start();
+    t2->start();
+    
+    t1->join();
+    t2->join();
+    
+    setEnvPort(++port);
+    sleep(1);
     return 0;
 }
