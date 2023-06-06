@@ -26,59 +26,60 @@ using namespace gagira;
 int main() {
     int port = getEnvPort();
     String url = createString("tcp://127.0.0.1:")->append(createString(port));
-    
-    printf("trace1 \n");
+
     FenceCenter center = createFenceCenter(url,nullptr);
     center->start();
     usleep(1000*100);
-    
+
     Thread t1 = createThread([&]{
         FenceConnection c = createFenceConnection(url);
         c->connect();
-        printf("t1 start \n");
         c->acquireReadFence(createString("abc"));
-        printf("t2 start \n");
         sleep(5);
         c->releaseReadFence(createString("abc"));
-        printf("t3 start \n");
     });
-    
+
     Thread t2 = createThread([&]{
-        usleep(1000 * 1000);
-        printf("start t2 \n");
+        usleep(1000 * 100);
         FenceConnection c = createFenceConnection(url);
         c->connect();
-        
+
         TimeWatcher watch = createTimeWatcher();
-        printf("start t2 acquire lock trace1 \n");
         watch->start();
         c->acquireWriteFence(createString("abc"));
-        printf("start t2 acquire lock trace2 ,cost: %ld\n",watch->stop());
+        auto cost = watch->stop();
+        if(cost < 4800 || cost > 5050) {
+          TEST_FAIL("testFenceAcquireReadFence case1 ,cost is %d \n",cost);
+        }
+        printf("cost is %d \n",cost);
         c->releaseWriteFence(createString("abc"));
     });
-    
+
     Thread t3 = createThread([&]{
         usleep(1000*100);
         FenceConnection c = createFenceConnection(url);
         c->connect();
-        printf("t3_1 start \n");
+
         TimeWatcher watch = createTimeWatcher();
         watch->start();
         c->acquireReadFence(createString("abc"));
-        printf("t3_1 acquire lock trace2 ,cost: %ld\n",watch->stop());
-        sleep(5);
+        auto cost = watch->stop();
+        if(cost > 50) {
+          TEST_FAIL("testFenceAcquireReadFence case2 ,cost is %d",cost);
+        }
+        usleep(1000*5000);
         c->releaseReadFence(createString("abc"));
-        printf("t3_1 start \n");
     });
-    
+
     t1->start();
     t2->start();
     t3->start();
-    
+
     t1->join();
     t2->join();
-    
+    t3->join();
+
     setEnvPort(++port);
-    sleep(1);
+    TEST_OK("testFenceAcquireReadFence case100");
     return 0;
 }

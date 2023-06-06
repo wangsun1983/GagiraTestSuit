@@ -34,33 +34,38 @@ int main() {
     Thread t1 = createThread([&]{
         FenceConnection c = createFenceConnection(url);
         c->connect();
+
+        TimeWatcher watch = createTimeWatcher();
         c->acquireFence(createString("abc"));
-        sleep(5);
-        c->releaseFence(createString("abc"));
+        c->acquireFence(createString("abc"));
+        c->releaseWriteFence(createString("abc"));
+        usleep(1000*1000);
+        c->releaseWriteFence(createString("abc"));
     });
 
     Thread t2 = createThread([&]{
-        usleep(1000 * 1000);
+        usleep(1000*100);
         FenceConnection c = createFenceConnection(url);
         c->connect();
 
         TimeWatcher watch = createTimeWatcher();
         watch->start();
-        int ret = c->acquireFence(createString("abc"),3000);
+        c->acquireFence(createString("abc"));
         auto cost = watch->stop();
-        if(cost > 3050) {
-          TEST_FAIL("testFenceAcquireTimeout case2 ,cost is %d",cost);
+        if(cost < 900 || cost > 950) {
+          TEST_FAIL("testFenceDoubleAcquire case1 ,cost is %d",cost);
         }
-        c->releaseFence(createString("abc"));
+        c->releaseWriteFence(createString("abc"));
+        printf("t2 trace3 \n");
     });
+
 
     t1->start();
     t2->start();
-
     t1->join();
     t2->join();
 
     setEnvPort(++port);
-    TEST_OK("testFenceAcquireTimeout case100");
+    TEST_OK("testFenceDoubleAcquire case100");
     return 0;
 }

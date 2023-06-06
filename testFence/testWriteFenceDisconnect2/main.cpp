@@ -34,9 +34,9 @@ int main() {
     Thread t1 = createThread([&]{
         FenceConnection c = createFenceConnection(url);
         c->connect();
-        c->acquireFence(createString("abc"));
+        c->acquireWriteFence(createString("abc"));
         sleep(5);
-        c->releaseFence(createString("abc"));
+        c->close();
     });
 
     Thread t2 = createThread([&]{
@@ -46,13 +46,15 @@ int main() {
 
         TimeWatcher watch = createTimeWatcher();
         watch->start();
-        int ret = c->acquireFence(createString("abc"),3000);
+        c->acquireReadFence(createString("abc"));
         auto cost = watch->stop();
-        if(cost > 3050) {
-          TEST_FAIL("testFenceAcquireTimeout case2 ,cost is %d",cost);
+        if(cost < 4000 || cost > 4050) {
+          TEST_FAIL("testWriteFenceDisconnect2 case1,cost is %d",cost);
         }
-        c->releaseFence(createString("abc"));
+        c->releaseReadFence(createString("abc"));
     });
+
+
 
     t1->start();
     t2->start();
@@ -61,6 +63,6 @@ int main() {
     t2->join();
 
     setEnvPort(++port);
-    TEST_OK("testFenceAcquireTimeout case100");
+    TEST_OK("testWriteFenceDisconnect2 case1");
     return 0;
 }

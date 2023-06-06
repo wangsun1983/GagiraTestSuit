@@ -27,16 +27,26 @@ int main() {
     int port = getEnvPort();
     String url = createString("tcp://127.0.0.1:")->append(createString(port));
 
+    printf("trace1 \n");
     FenceCenter center = createFenceCenter(url,nullptr);
     center->start();
     usleep(1000*100);
 
     Thread t1 = createThread([&]{
+        usleep(1000*100);
         FenceConnection c = createFenceConnection(url);
         c->connect();
-        c->acquireFence(createString("abc"));
-        sleep(5);
-        c->releaseFence(createString("abc"));
+        TimeWatcher watch = createTimeWatcher();
+        watch->start();
+        c->acquireReadFence(createString("abc"));
+        auto cost = watch->stop();
+        if(cost > 50) {
+          TEST_FAIL("testFenceAcquireWriteFnece case1 ,cost is %d",cost);
+        }
+
+        sleep(3);
+        c->releaseReadFence(createString("abc"));
+        printf("t3 start \n");
     });
 
     Thread t2 = createThread([&]{
@@ -46,21 +56,32 @@ int main() {
 
         TimeWatcher watch = createTimeWatcher();
         watch->start();
-        int ret = c->acquireFence(createString("abc"),3000);
+        c->acquireWriteFence(createString("abc"));
         auto cost = watch->stop();
-        if(cost > 3050) {
-          TEST_FAIL("testFenceAcquireTimeout case2 ,cost is %d",cost);
+        if(cost < 2100 || cost > 2150) {
+          TEST_FAIL("testFenceAcquireWriteFnece case2 ,cost is %d",cost);
         }
-        c->releaseFence(createString("abc"));
+        c->releaseWriteFence(createString("abc"));
+    });
+
+    Thread t3 = createThread([&]{
+        FenceConnection c = createFenceConnection(url);
+        c->connect();
+        TimeWatcher watch = createTimeWatcher();
+        c->acquireReadFence(createString("abc"));
+        sleep(3);
+        c->releaseReadFence(createString("abc"));
     });
 
     t1->start();
     t2->start();
+    t3->start();
 
     t1->join();
     t2->join();
+    t3->join();
 
     setEnvPort(++port);
-    TEST_OK("testFenceAcquireTimeout case100");
+    TEST_OK("testFenceAcquireWriteFnece case100");
     return 0;
 }

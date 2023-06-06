@@ -27,31 +27,51 @@ int main() {
     int port = getEnvPort();
     String url = createString("tcp://127.0.0.1:")->append(createString(port));
 
+    printf("trace1 \n");
     FenceCenter center = createFenceCenter(url,nullptr);
     center->start();
     usleep(1000*100);
+    TimeWatcher watch = createTimeWatcher();
 
     Thread t1 = createThread([&]{
+        usleep(1000*200);
         FenceConnection c = createFenceConnection(url);
         c->connect();
-        c->acquireFence(createString("abc"));
-        sleep(5);
-        c->releaseFence(createString("abc"));
+
+        TimeWatcher local_watch = createTimeWatcher();
+        local_watch->start();
+        c->acquireReadFence(createString("abc"));
+        auto cost = watch->stop();
+        if(cost > 50) {
+          TEST_FAIL("testFenceDoubleAcquireWriteFence case1,cost is %d",cost);
+        }
+
+        auto local_cost = local_watch->stop();
+        if(local_cost > 1860) {
+          TEST_FAIL("testFenceDoubleAcquireWriteFence case2,cost is %d",local_cost);
+        }
+        
+        watch->start();
+        c->releaseReadFence(createString("abc"));
+        cost = watch->stop();
+        if(cost > 15) {
+          TEST_FAIL("testFenceDoubleAcquireWriteFence case3,cost is %d",cost);
+        }
     });
 
     Thread t2 = createThread([&]{
-        usleep(1000 * 1000);
         FenceConnection c = createFenceConnection(url);
         c->connect();
 
-        TimeWatcher watch = createTimeWatcher();
+        c->acquireWriteFence(createString("abc"));
         watch->start();
-        int ret = c->acquireFence(createString("abc"),3000);
-        auto cost = watch->stop();
-        if(cost > 3050) {
-          TEST_FAIL("testFenceAcquireTimeout case2 ,cost is %d",cost);
-        }
-        c->releaseFence(createString("abc"));
+        c->acquireWriteFence(createString("abc"));
+        c->releaseWriteFence(createString("abc"));
+
+        usleep(1000*2000);
+        watch->start();
+        c->releaseWriteFence(createString("abc"));
+        usleep(1000*3000);
     });
 
     t1->start();
@@ -61,6 +81,6 @@ int main() {
     t2->join();
 
     setEnvPort(++port);
-    TEST_OK("testFenceAcquireTimeout case100");
+    TEST_OK("testFenceDoubleAcquireWriteFence case100");
     return 0;
 }
