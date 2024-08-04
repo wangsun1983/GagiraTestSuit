@@ -60,30 +60,30 @@ public:
 
 int main() {
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
     
     printf("trace1 \n");
     SpaceCenter center = createSpaceCenter(url,nullptr);
     center->start();
     usleep(1000*100);
     
-    Thread t1 = createThread([&]{
+    Thread t1 = Thread::New([&]{
         SpaceConnection conn = createSpaceConnection(url,createMyListener());
         conn->connect();
         
-        conn->monitor(createString("Student"));
+        conn->monitor(String::New("Student"));
         latch->await();
     });
     t1->start();
     usleep(1000*100);
     
     StudentInfo info = createStudentInfo();
-    info->name = createString("wang");
+    info->name = String::New("wang");
     info->age = 1122;
     
     SpaceConnection conn2 = createSpaceConnection(url,nullptr);
     conn2->connect();    
-    conn2->remove(createString("Student"));
+    conn2->remove(String::New("Student"));
     t1->join();
     
     setEnvPort(++port);

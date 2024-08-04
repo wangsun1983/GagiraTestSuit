@@ -7,38 +7,40 @@
 
 #include "File.hpp"
 #include "FileOutputStream.hpp"
-#include "BufferedReader.hpp"
+#include "TextLineReader.hpp"
 
-#define DEFAULT_PORT 2001
+#define DEFAULT_PORT 4000
 #define DEFAULT_PATH "/tmp/obotcha_test_suit_port.txt"
 
 using namespace obotcha;
 
 
 int getEnvPort() {
-    File file = createFile(DEFAULT_PATH);
+    File file = File::New(DEFAULT_PATH);
     if(file->exists()) {
-        BufferedReader r = createBufferedReader(file);
+        TextLineReader r = TextLineReader::New(file);
         String value = r->readLine();
-        return value->toBasicInt();
+        return (value != nullptr)?value->toBasicInt():DEFAULT_PORT;
     }
 
     return DEFAULT_PORT;
 }
 
 void setEnvPort(int p) {
-    if(p > 60000) {
+    if(p > 6000) {
         p = DEFAULT_PORT;
     }
-    File file = createFile(DEFAULT_PATH);
+    File file = File::New(DEFAULT_PATH);
     if(!file->exists()) {
         file->createNewFile();
     }
-    FileOutputStream stream = createFileOutputStream(file);
+    FileOutputStream stream = FileOutputStream::New(file);
     stream->open();
-    stream->write(createString(p)->toByteArray());
+	auto data = String::New(p)->toByteArray();
+    stream->write(data);
     stream->flush();
     stream->close();
+    
 }
 
 void resetEnvPort() {

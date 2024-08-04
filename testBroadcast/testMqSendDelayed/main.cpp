@@ -62,7 +62,7 @@ public:
 
 int main() {
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(1464));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(1464));
     MqCenterBuilder builder = createMqCenterBuilder();
     builder->setUrl(url);
     MqCenter center = builder->build();
@@ -72,7 +72,7 @@ int main() {
     connection->subscribeChannel("info");
 
     StudentInfo student = createStudentInfo();
-    student->name = createString("wang");
+    student->name = String::New("wang");
     student->age = 12;
     MqMessageParam param = createMqMessageParam();
     param->setDelayInterval(300);

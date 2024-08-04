@@ -25,7 +25,7 @@ using namespace gagira;
 
 int main() {
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     printf("trace1 \n");
     FenceCenter center = createFenceCenter(url,nullptr);
@@ -33,14 +33,14 @@ int main() {
     usleep(1000*100);
     TimeWatcher watch = createTimeWatcher();
 
-    Thread t1 = createThread([&]{
+    Thread t1 = Thread::New([&]{
         usleep(1000*200);
         FenceConnection c = createFenceConnection(url);
         c->connect();
 
         TimeWatcher local_watch = createTimeWatcher();
         local_watch->start();
-        c->acquireReadFence(createString("abc"));
+        c->acquireReadFence(String::New("abc"));
         auto cost = watch->stop();
         if(cost > 50) {
           TEST_FAIL("testFenceDoubleAcquireWriteFence case1,cost is %d",cost);
@@ -52,25 +52,25 @@ int main() {
         }
         
         watch->start();
-        c->releaseReadFence(createString("abc"));
+        c->releaseReadFence(String::New("abc"));
         cost = watch->stop();
         if(cost > 15) {
           TEST_FAIL("testFenceDoubleAcquireWriteFence case3,cost is %d",cost);
         }
     });
 
-    Thread t2 = createThread([&]{
+    Thread t2 = Thread::New([&]{
         FenceConnection c = createFenceConnection(url);
         c->connect();
 
-        c->acquireWriteFence(createString("abc"));
+        c->acquireWriteFence(String::New("abc"));
         watch->start();
-        c->acquireWriteFence(createString("abc"));
-        c->releaseWriteFence(createString("abc"));
+        c->acquireWriteFence(String::New("abc"));
+        c->releaseWriteFence(String::New("abc"));
 
         usleep(1000*2000);
         watch->start();
-        c->releaseWriteFence(createString("abc"));
+        c->releaseWriteFence(String::New("abc"));
         usleep(1000*3000);
     });
 

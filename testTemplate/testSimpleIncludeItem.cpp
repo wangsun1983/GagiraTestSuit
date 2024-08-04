@@ -25,7 +25,7 @@ void testSimpleIncludeItem() {
     
     SimpleData4 data1 = createSimpleData4();
     data1->age = 10;
-    data1->name = createString("wang");
+    data1->name = String::New("wang");
     data1->isStudent = true;
     String ret = nullptr;
     HtmlTemplate temp = nullptr;

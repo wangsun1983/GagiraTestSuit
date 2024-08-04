@@ -24,7 +24,7 @@ void testSimpleObjectItem() {
 
     SimpleData1 data1 = createSimpleData1();
     data1->age = 10;
-    data1->name = createString("wang");
+    data1->name = String::New("wang");
     String ret = nullptr;
     HtmlTemplate temp = nullptr;
     
@@ -47,7 +47,7 @@ void testSimpleObjectItem() {
 
     temp = createHtmlTemplate();
     temp->import("<p> {{.}} </p> \r\n <br>{{.}}</br>");
-    ret = temp->execute(createString("abc"));
+    ret = temp->execute(String::New("abc"));
     
     
     temp = createHtmlTemplate();

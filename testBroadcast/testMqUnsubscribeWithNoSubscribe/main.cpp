@@ -48,7 +48,7 @@ int main() {
 
     int pid = fork();
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     if(pid != 0) {
         sleep(1);

@@ -45,7 +45,7 @@ public:
 
         SampleData data = createSampleData();
         data->a = 100;
-        data->b = createString("hello,this is server");
+        data->b = String::New("hello,this is server");
         return createHttpResponseEntity(data);
     }
 

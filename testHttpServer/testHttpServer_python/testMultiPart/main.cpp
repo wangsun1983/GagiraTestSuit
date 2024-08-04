@@ -38,8 +38,8 @@ public:
             File f = file->getFile();
             //start md5 check
             Md md5 = createMd();
-            String v1 = md5->encrypt(createFile("./tmp/testdata"));
-            String v2 = md5->encrypt(createFile(f->getAbsolutePath()->toChars()));
+            String v1 = md5->encrypt(File::New("./tmp/testdata"));
+            String v2 = md5->encrypt(File::New(f->getAbsolutePath()->toChars()));
             if(v1 != v2) {
               TEST_FAIL("testMutltiPart case1 error,path is %s",f->getAbsolutePath()->toChars());
             }
@@ -53,7 +53,7 @@ public:
 
 int main() {
     //create test data
-    createSampleFile(createFile("./tmp/testdata"),1024*1024*16);
+    createSampleFile(File::New("./tmp/testdata"),1024*1024*16);
 
     int port = getEnvPort();
     Server server = createServer();

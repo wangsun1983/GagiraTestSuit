@@ -104,7 +104,7 @@ private:
 int main() {
 
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     int pid = fork();
 
@@ -143,7 +143,7 @@ int main() {
         MqConnection connection = createMqConnection(url);
         connection->connect();
         sleep(2);
-        String str = createString("hello world");   
+        String str = String::New("hello world");   
         ByteArray data = str->toByteArray();
         MqMessageParam param = createMqMessageParam();
         param->setFlags(st(MqMessage)::Publish);

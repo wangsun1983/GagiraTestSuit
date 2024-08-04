@@ -49,7 +49,7 @@ public:
 int main() {
 
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(1284));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(1284));
 
     int pid = fork();
 
@@ -59,7 +59,7 @@ int main() {
         connection->connect();
         connection->subscribeChannel("info");
         latch->await();
-        bool result = connection->publishMessage(createString("info"),createString("hello"));
+        bool result = connection->publishMessage(String::New("info"),String::New("hello"));
         if(result) {
             TEST_FAIL("testmqsendAfterClose case100");
         }

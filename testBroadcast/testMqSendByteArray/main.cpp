@@ -45,7 +45,7 @@ public:
 int main() {
     
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
     int pid = fork();
 
     if(pid != 0) {
@@ -66,7 +66,7 @@ int main() {
         MqConnection connection = createMqConnection(url);
         connection->connect();
         
-        ByteArray array = createByteArray(1024);
+        ByteArray array = ByteArray::New(1024);
         for(int i = 0;i<1024;i++) {
             array[i] = i%255;
         }

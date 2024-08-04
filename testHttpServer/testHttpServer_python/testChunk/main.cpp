@@ -30,7 +30,7 @@ CountDownLatch latch = createCountDownLatch(1);
 DECLARE_CLASS(SimplePostController) IMPLEMENTS(Controller) {
 public:
     HttpResponseEntity get() {
-        return createHttpResponseEntity(createHttpChunk(createFile("./tmp/testdata")));
+        return createHttpResponseEntity(createHttpChunk(File::New("./tmp/testdata")));
     }
 
     HttpResponseEntity complete() {
@@ -42,7 +42,7 @@ public:
 
 int main() {
     //create test data
-    createSampleFile(createFile("./tmp/testdata"),1024*1024*16);
+    createSampleFile(File::New("./tmp/testdata"),1024*1024*16);
 
     int port = getEnvPort();
     Server server = createServer();
@@ -61,9 +61,9 @@ int main() {
     setEnvPort(port);
 
     for(int i = 0;i < 32;i++) {
-        File f = createFile(createString("./tmp/")->append(createString(i)));
+        File f = File::New(String::New("./tmp/")->append(String::New(i)));
         Md md5 = createMd();
-        String v1 = md5->encrypt(createFile("./tmp/testdata"));
+        String v1 = md5->encrypt(File::New("./tmp/testdata"));
         String v2 = md5->encrypt(f);
         if(v1 != v2) {
           TEST_FAIL("testHttpChunk case1 error,path is %s",f->getAbsolutePath()->toChars());

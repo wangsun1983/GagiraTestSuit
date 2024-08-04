@@ -25,29 +25,29 @@ using namespace gagira;
 
 int main() {
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     printf("trace1 \n");
     FenceCenter center = createFenceCenter(url,nullptr);
     center->start();
     usleep(1000*100);
 
-    Thread t1 = createThread([&]{
+    Thread t1 = Thread::New([&]{
         FenceConnection c = createFenceConnection(url);
         c->connect();
-        c->acquireReadFence(createString("abc"));
+        c->acquireReadFence(String::New("abc"));
         sleep(2);
         c->close();
     });
 
-    Thread t2 = createThread([&]{
+    Thread t2 = Thread::New([&]{
         usleep(1000*100);
         FenceConnection c = createFenceConnection(url);
         c->connect();
 
         auto watch = createTimeWatcher();
         watch->start();
-        c->acquireReadFence(createString("abc"));
+        c->acquireReadFence(String::New("abc"));
         auto cost = watch->stop();
         if(cost > 15) {
           TEST_FAIL("testReadFenceDisocnnect2 case1,cost is %d",cost);
@@ -56,19 +56,19 @@ int main() {
         c->close();
     });
 
-    Thread t3 = createThread([&]{
+    Thread t3 = Thread::New([&]{
         usleep(1000 * 3000);
         FenceConnection c = createFenceConnection(url);
         c->connect();
 
         TimeWatcher watch = createTimeWatcher();
         watch->start();
-        c->acquireWriteFence(createString("abc"));
+        c->acquireWriteFence(String::New("abc"));
         auto cost = watch->stop();
         if(cost > 1150 || cost < 1100) {
           TEST_FAIL("testReadFenceDisocnnect2 case2,cost is %d",cost);
         }
-        c->releaseWriteFence(createString("abc"));
+        c->releaseWriteFence(String::New("abc"));
     });
 
     t1->start();

@@ -25,33 +25,33 @@ using namespace gagira;
 
 int main() {
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     FenceCenter center = createFenceCenter(url,nullptr);
     center->start();
     usleep(1000*100);
 
-    Thread t1 = createThread([&]{
+    Thread t1 = Thread::New([&]{
         FenceConnection c = createFenceConnection(url);
         c->connect();
-        c->acquireFence(createString("abc"));
+        c->acquireFence(String::New("abc"));
         sleep(5);
-        c->releaseFence(createString("abc"));
+        c->releaseFence(String::New("abc"));
     });
 
-    Thread t2 = createThread([&]{
+    Thread t2 = Thread::New([&]{
         usleep(1000 * 1000);
         FenceConnection c = createFenceConnection(url);
         c->connect();
 
         TimeWatcher watch = createTimeWatcher();
         watch->start();
-        int ret = c->acquireFence(createString("abc"),3000);
+        int ret = c->acquireFence(String::New("abc"),3000);
         auto cost = watch->stop();
         if(cost > 3050) {
           TEST_FAIL("testFenceAcquireTimeout case2 ,cost is %d",cost);
         }
-        c->releaseFence(createString("abc"));
+        c->releaseFence(String::New("abc"));
     });
 
     t1->start();

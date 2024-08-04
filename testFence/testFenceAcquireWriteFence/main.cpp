@@ -25,52 +25,52 @@ using namespace gagira;
 
 int main() {
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     printf("trace1 \n");
     FenceCenter center = createFenceCenter(url,nullptr);
     center->start();
     usleep(1000*100);
 
-    Thread t1 = createThread([&]{
+    Thread t1 = Thread::New([&]{
         usleep(1000*100);
         FenceConnection c = createFenceConnection(url);
         c->connect();
         TimeWatcher watch = createTimeWatcher();
         watch->start();
-        c->acquireReadFence(createString("abc"));
+        c->acquireReadFence(String::New("abc"));
         auto cost = watch->stop();
         if(cost > 50) {
           TEST_FAIL("testFenceAcquireWriteFnece case1 ,cost is %d",cost);
         }
 
         sleep(3);
-        c->releaseReadFence(createString("abc"));
+        c->releaseReadFence(String::New("abc"));
         printf("t3 start \n");
     });
 
-    Thread t2 = createThread([&]{
+    Thread t2 = Thread::New([&]{
         usleep(1000 * 1000);
         FenceConnection c = createFenceConnection(url);
         c->connect();
 
         TimeWatcher watch = createTimeWatcher();
         watch->start();
-        c->acquireWriteFence(createString("abc"));
+        c->acquireWriteFence(String::New("abc"));
         auto cost = watch->stop();
         if(cost < 2100 || cost > 2150) {
           TEST_FAIL("testFenceAcquireWriteFnece case2 ,cost is %d",cost);
         }
-        c->releaseWriteFence(createString("abc"));
+        c->releaseWriteFence(String::New("abc"));
     });
 
-    Thread t3 = createThread([&]{
+    Thread t3 = Thread::New([&]{
         FenceConnection c = createFenceConnection(url);
         c->connect();
         TimeWatcher watch = createTimeWatcher();
-        c->acquireReadFence(createString("abc"));
+        c->acquireReadFence(String::New("abc"));
         sleep(3);
-        c->releaseReadFence(createString("abc"));
+        c->releaseReadFence(String::New("abc"));
     });
 
     t1->start();

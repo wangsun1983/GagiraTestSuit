@@ -109,7 +109,7 @@ private:
 int main() {
 
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     int pid = fork();
 
@@ -129,7 +129,7 @@ int main() {
         sleep(2);
         for(int i = 0; i <1024*32;i++) {
             StudentInfo student = createStudentInfo();
-            student->name = createString("wang");
+            student->name = String::New("wang");
             student->age = 12;
             connection->publishMessage("info",student,
                 createMqMessageParam()->setFlags(st(MqMessage)::OneShotFlag)->build());
@@ -148,7 +148,7 @@ int main() {
         MqConnection connection = createMqConnection(url,createConnectionListener());
         connection->connect();
         connection->subscribeChannel("info");
-        MyHandler h = createMyHandler(latch);
+        MyHandler h = MyHandler::New(latch);
         h->sendEmptyMessageDelayed(1,1*1000);
         latch->await();
         setEnvPort(++port);

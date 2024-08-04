@@ -65,7 +65,7 @@ public:
 int main() {
 
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     MqCenterBuilder builder = createMqCenterBuilder();
     builder->setUrl(url);
@@ -81,10 +81,10 @@ int main() {
     connection->subscribePersistenceChannel();
 
     StudentInfo student = createStudentInfo();
-    student->name = createString("wang");
+    student->name = String::New("wang");
     student->age = 12;
 
-    MqMessage msg = createMqMessage(createString("info"),student->serialize(),
+    MqMessage msg = createMqMessage(String::New("info"),student->serialize(),
                     st(MqMessage)::Publish|st(MqMessage)::StickFlag);
     printf("send message trace1 \n");
     connection->postBackMessage(msg->generatePacket());
@@ -99,7 +99,7 @@ int main() {
     connection2->connect();
     usleep(1000*100);
     printf("send message trace2 \n");
-    connection2->subscribeChannel(createString("info"));
+    connection2->subscribeChannel(String::New("info"));
     latch->await();
 
     TEST_OK("testMqCenterWaitPostBack case100");

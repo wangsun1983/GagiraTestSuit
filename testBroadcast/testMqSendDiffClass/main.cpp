@@ -111,17 +111,17 @@ int main() {
     
     int pid = fork();
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     if(pid != 0) {
         sleep(1);
         MqConnection connection = createMqConnection(url,createConnectionListener());
         connection->connect();
         connection->subscribeChannel("info");
-        MyHandler h = createMyHandler(latch);
+        MyHandler h = MyHandler::New(latch);
         h->sendEmptyMessageDelayed(1,1*1000);
         latch->await();
-        connection->publishMessage(createString("close"),createString("abc"));
+        connection->publishMessage(String::New("close"),String::New("abc"));
     } else {
         MqCenterBuilder builder = createMqCenterBuilder();
         builder->setUrl(url);

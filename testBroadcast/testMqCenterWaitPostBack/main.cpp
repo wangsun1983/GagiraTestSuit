@@ -64,7 +64,7 @@ public:
 int main() {
 
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(1110));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(1110));
 
     MqCenterBuilder builder = createMqCenterBuilder();
     builder->setUrl(url);
@@ -80,7 +80,7 @@ int main() {
     usleep(1000 * 100);
     
     StudentInfo student = createStudentInfo();
-    student->name = createString("wang");
+    student->name = String::New("wang");
     student->age = 12;
     connection->publishMessage("info",student,
         createMqMessageParam()->setFlags(st(MqMessage)::OneShotFlag)->build());

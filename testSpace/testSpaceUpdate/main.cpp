@@ -33,7 +33,7 @@ public:
 
 int main() {
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
     
     printf("trace1 \n");
     SpaceCenter center = createSpaceCenter(url,nullptr);
@@ -41,14 +41,14 @@ int main() {
     usleep(1000*100);
     printf("trace2 \n");
     StudentInfo info = createStudentInfo();
-    info->name = createString("aawang");
+    info->name = String::New("aawang");
     info->age = 123;
     printf("trace3 \n");
     SpaceConnection connection = createSpaceConnection(url);
     connection->connect();
-    connection->update(createString("Student"),info);
+    connection->update(String::New("Student"),info);
     printf("trace4 \n");
-    auto result = connection->get<StudentInfo>(createString("Student"));
+    auto result = connection->get<StudentInfo>(String::New("Student"));
     
     printf("name is %s,age is %d \n",result->name->toChars(),result->age);
     sleep(5);

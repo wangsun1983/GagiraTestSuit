@@ -24,7 +24,7 @@ public:
 DECLARE_CLASS(MyFunction) {
 public:
     String transalte(ArrayList<String> list) {
-        String start = createString("i get params is ");
+        String start = String::New("i get params is ");
         auto iterator = list->getIterator();
         while(iterator->hasValue()) {
             auto v = iterator->getValue();
@@ -40,8 +40,8 @@ void testSimpleFunctionItem() {
 
     SimpleData10 data10 = createSimpleData10();
     data10->age = 10;
-    data10->name = createString("wang");
-    data10->school = createString("haha middle school");
+    data10->name = String::New("wang");
+    data10->school = String::New("haha middle school");
     String ret = nullptr;
     HtmlTemplate temp = nullptr;
     

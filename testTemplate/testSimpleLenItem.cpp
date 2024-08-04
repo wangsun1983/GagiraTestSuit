@@ -16,9 +16,9 @@ using namespace gagira;
 void testSimpleLenItem() {
     
     ArrayList<String> list = createArrayList<String>();
-    list->add(createString("a"));
-    list->add(createString("b"));
-    list->add(createString("c"));
+    list->add(String::New("a"));
+    list->add(String::New("b"));
+    list->add(String::New("c"));
     HtmlTemplate temp = nullptr;
     String ret = nullptr;
 

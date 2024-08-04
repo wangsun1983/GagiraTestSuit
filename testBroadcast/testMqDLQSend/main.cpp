@@ -41,7 +41,7 @@ public:
             TEST_FAIL("test MqDLQ send case1");
         }
 
-        long current = st(System)::currentTimeMillis();
+        long current = st(System)::CurrentTimeMillis();
         long time = message->getPointTime();
         if(current - time > 10 || current - time < -5) {
             TEST_FAIL("test MqDLQ send case2");
@@ -82,7 +82,7 @@ public:
 
 int main() {
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(1414));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(1414));
     MqCenterBuilder builder = createMqCenterBuilder();
     builder->setUrl(url);
     MqCenter center = builder->build();
@@ -97,7 +97,7 @@ int main() {
     MqConnection connection2 = createMqConnection(url);
     connection2->connect();
     StudentInfo student = createStudentInfo();
-    student->name = createString("wang");
+    student->name = String::New("wang");
     student->age = 12;
     connection2->publishMessage("info",student);
     usleep(1000 * 50);

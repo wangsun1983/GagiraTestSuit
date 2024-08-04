@@ -78,21 +78,21 @@ private:
 
 int main() {
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
     port++;
     
-    Thread t1 = createThread([&url] {
+    Thread t1 = Thread::New([&url] {
         sleep(1);
         MqConnection connection = createMqConnection(url,createConnectionListener());
         connection->connect();
         connection->subscribeChannel("info");
-        MyHandler h = createMyHandler(latch);
+        MyHandler h = MyHandler::New(latch);
         h->sendEmptyMessageDelayed(1,1*1000);
         latch->await();
         TEST_OK("testmqsend case100");
     });
         
-    Thread t2 = createThread([&url] {
+    Thread t2 = Thread::New([&url] {
         MqCenterBuilder builder = createMqCenterBuilder();
         builder->setUrl(url);
         MqCenter center = builder->build();
@@ -104,7 +104,7 @@ int main() {
         sleep(2);
         for(int i = 0; i <1024*32;i++) {
             StudentInfo student = createStudentInfo();
-            student->name = createString("wang");
+            student->name = String::New("wang");
             student->age = 12;
             connection->publishMessage("info",student,
                 createMqMessageParam()->setFlags(st(MqMessage)::OneShotFlag)->build());

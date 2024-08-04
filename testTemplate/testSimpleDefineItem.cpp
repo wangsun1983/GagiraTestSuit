@@ -25,7 +25,7 @@ void testSimpleDefineItem() {
     ArrayList<SimpleData5> list = createArrayList<SimpleData5>();
     SimpleData5 data1 = createSimpleData5();
     data1->age = 10;
-    data1->name = createString("wang");
+    data1->name = String::New("wang");
     data1->isStudent = true;
 
     HtmlTemplate temp  = createHtmlTemplate();

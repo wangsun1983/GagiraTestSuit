@@ -24,11 +24,11 @@ void testSimpleRangeItem() {
     ArrayList<SimpleData3> list = createArrayList<SimpleData3>();
     SimpleData3 data1 = createSimpleData3();
     data1->age = 10;
-    data1->name = createString("wang");
+    data1->name = String::New("wang");
 
     SimpleData3 data2 = createSimpleData3();
     data2->age = 20;
-    data2->name = createString("sun");
+    data2->name = String::New("sun");
 
     String ret = nullptr;
 

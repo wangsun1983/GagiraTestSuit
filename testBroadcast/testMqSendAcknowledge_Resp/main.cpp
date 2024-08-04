@@ -83,7 +83,7 @@ int main() {
         //start send
         usleep(1000*200);
         StudentInfo student = createStudentInfo();
-        student->name = createString("wang");
+        student->name = String::New("wang");
         student->age = 12;
         MqMessageParam param = createMqMessageParam();
         param->setFlags(st(MqMessage)::OneShotFlag|st(MqMessage)::AcknowledgeFlag);

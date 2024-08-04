@@ -79,7 +79,7 @@ private:
 int main() {
 
     int port = getEnvPort();
-    String url = createString("tcp://127.0.0.1:")->append(createString(port));
+    String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     int pid = fork();
 
@@ -92,7 +92,7 @@ int main() {
         connection->connect();
         
         StudentInfo student = createStudentInfo();
-        student->name = createString("wang");
+        student->name = String::New("wang");
         student->age = 12;
         printf("send stick message");
         connection->publishStickMessage("info",student);

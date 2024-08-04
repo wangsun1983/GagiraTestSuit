@@ -134,23 +134,23 @@ public:
 
 void testRestfulUrl2() {
     HttpRouter router = createHttpRouter(
-                            createString("/login/{user}/{password}"),
+                            String::New("/login/{user}/{password}"),
                             createTestRestFulListener2_1());
 
     HttpRouter router2 = createHttpRouter(
-                            createString("/login/{user}/{password}/{id}"),
+                            String::New("/login/{user}/{password}/{id}"),
                             createTestRestFulListener2_2());
 
     HttpRouter router3 = createHttpRouter(
-                            createString("/login2/{user2}/{password2}/{id2}"),
+                            String::New("/login2/{user2}/{password2}/{id2}"),
                             createTestRestFulListener2_3());
     
     HttpRouter router4 = createHttpRouter(
-                            createString("/login"),
+                            String::New("/login"),
                             createTestRestFulListener2_4());
 
     HttpRouter router5 = createHttpRouter(
-                            createString("/login2"),
+                            String::New("/login2"),
                             createTestRestFulListener2_5());
 
     HttpRouterMap map = createHttpRouterMap();
@@ -162,7 +162,7 @@ void testRestfulUrl2() {
     
     HashMap<String,String> params;
     HttpRouter r;
-    FetchRet(r,params) = map->findRouter(createString("/login/wang/1234?abc=1&bbb=3"));
+    FetchRet(r,params) = map->findRouter(String::New("/login/wang/1234?abc=1&bbb=3"));
     ServletRequestCache cache1 = createServletRequestCache(nullptr,createControllerParam(params));
     st(GlobalCacheManager)::getInstance()->add(cache1);
     r->invoke();
@@ -172,7 +172,7 @@ void testRestfulUrl2() {
 
     HashMap<String,String> params2;
     HttpRouter r2;
-    FetchRet(r2,params2) = map->findRouter(createString("/login/wang2/12342/55?abc=1&bbb=3"));
+    FetchRet(r2,params2) = map->findRouter(String::New("/login/wang2/12342/55?abc=1&bbb=3"));
     ServletRequestCache cache2 = createServletRequestCache(nullptr,createControllerParam(params2));
     st(GlobalCacheManager)::getInstance()->add(cache2);
     r2->invoke();
@@ -182,7 +182,7 @@ void testRestfulUrl2() {
 
     HashMap<String,String> params3;
     HttpRouter r3;
-    FetchRet(r3,params3) = map->findRouter(createString("/login2/wang3/12343/33?abc=1&bbb=3"));
+    FetchRet(r3,params3) = map->findRouter(String::New("/login2/wang3/12343/33?abc=1&bbb=3"));
     ServletRequestCache cache3 = createServletRequestCache(nullptr,createControllerParam(params3));
     st(GlobalCacheManager)::getInstance()->add(cache3);
     r3->invoke();
@@ -192,7 +192,7 @@ void testRestfulUrl2() {
 
     HashMap<String,String> params4;
     HttpRouter r4;
-    FetchRet(r4,params4) = map->findRouter(createString("/login"));
+    FetchRet(r4,params4) = map->findRouter(String::New("/login"));
     ServletRequestCache cache4 = createServletRequestCache(nullptr,createControllerParam(params4));
     st(GlobalCacheManager)::getInstance()->add(cache4);
     r4->invoke();
@@ -202,7 +202,7 @@ void testRestfulUrl2() {
 
     HashMap<String,String> params5;
     HttpRouter r5;
-    FetchRet(r5,params5) = map->findRouter(createString("/login2?abc=1&bbb=3"));
+    FetchRet(r5,params5) = map->findRouter(String::New("/login2?abc=1&bbb=3"));
     ServletRequestCache cache5 = createServletRequestCache(nullptr,createControllerParam(params5));
     st(GlobalCacheManager)::getInstance()->add(cache5);
     r5->invoke();

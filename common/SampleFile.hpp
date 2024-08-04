@@ -14,10 +14,10 @@ void createSampleFile(File file,long size) {
     }
     file->createNewFile();
     
-    FileOutputStream stream = createFileOutputStream(file);
+    FileOutputStream stream = FileOutputStream::New(file);
     stream->open();
     while(size > 0) {
-        String f = createString(st(System)::currentTimeMillis());
+        String f = String::New(st(System)::CurrentTimeMillis());
         if(f->size() > size) {
             f = f->subString(0,size);
         }

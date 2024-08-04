@@ -65,11 +65,11 @@ public:
 
 void testRestfulUrl() {
     HttpRouter router = createHttpRouter(
-                            createString("/login/{user}/{password}"),
+                            String::New("/login/{user}/{password}"),
                             createTestRestFulListener());
 
     HttpRouter router1 = createHttpRouter(
-                            createString("/login2/{user}/{password}"),
+                            String::New("/login2/{user}/{password}"),
                             createTestRestFulListener1());
                             
     HttpRouterMap map = createHttpRouterMap();
@@ -78,7 +78,7 @@ void testRestfulUrl() {
     
     HashMap<String,String> params;
     HttpRouter r;
-    FetchRet(r,params) = map->findRouter(createString("/login/wang/1234?abc=1&bbb=3"));
+    FetchRet(r,params) = map->findRouter(String::New("/login/wang/1234?abc=1&bbb=3"));
     ServletRequestCache cache = createServletRequestCache(nullptr,createControllerParam(params));
     st(GlobalCacheManager)::getInstance()->add(cache);
     r->invoke();
@@ -88,7 +88,7 @@ void testRestfulUrl() {
 
     HashMap<String,String> params1;
     HttpRouter r1;
-    FetchRet(r1,params1) = map->findRouter(createString("/login2/wang2/12342"));
+    FetchRet(r1,params1) = map->findRouter(String::New("/login2/wang2/12342"));
     ServletRequestCache cache1 = createServletRequestCache(nullptr,createControllerParam(params1));
     st(GlobalCacheManager)::getInstance()->add(cache1);
     r1->invoke();

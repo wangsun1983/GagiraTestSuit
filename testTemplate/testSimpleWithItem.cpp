@@ -24,11 +24,11 @@ void testSimpleWithItem() {
     ArrayList<SimpleData8> list = createArrayList<SimpleData8>();
     SimpleData8 data1 = createSimpleData8();
     data1->age = 10;
-    data1->name = createString("wang");
+    data1->name = String::New("wang");
 
     SimpleData8 data2 = createSimpleData8();
     data2->age = 20;
-    data2->name = createString("sun");
+    data2->name = String::New("sun");
 
     String ret = nullptr;
 
