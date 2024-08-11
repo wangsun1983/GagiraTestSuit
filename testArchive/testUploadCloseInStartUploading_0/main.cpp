@@ -59,12 +59,12 @@ int main() {
     File file = File::New("./tmp/testdata");
     if(!file->exists()) {
       file->createNewFile();
-      for(int i = 0;i<32;i++) {
+      for(int i = 0;i<1024;i++) {
         FileOutputStream stream = FileOutputStream::New(file);
         stream->open(O_APPEND);
         String data = String::New("");
-        for(int i = 0;i < 32;i++) {
-          data = data->append(String::New("xxxxxxxxxxxxxxxxxx"));
+        for(int i = 0;i < 1024;i++) {
+          data = data->append(String::New(st(System)::CurrentTimeMillis()));
         }
         stream->write(data->toByteArray());
         stream->close();
@@ -84,30 +84,47 @@ int main() {
     c->connect();
    
     File f = File::New("./tmp/testdata");
-    int result = c->upload(f,[](int status,int progress) {
-        File rewriteFile = File::New("./tmp/testdata");
-        auto inputstream = FileInputStream::New(rewriteFile);
-        inputstream->open();
-        auto data = inputstream->readAll();
-        data[1] = 'c';
-
-        auto rewriteSteam = FileOutputStream::New(rewriteFile);
-        rewriteSteam->open(O_TRUNC);
-        
-        rewriteSteam->write(data);
-        rewriteSteam->flush();
+    int ret = c->upload(f,[&c](int status,int progress) {
+        if(status == st(ArchiveConnection)::ProcessStatus::StartUploading) {
+            if(progress == 0) {
+                c->close();
+                usleep(1000*50);
+            }
+        }
     });
-    
+    printf("client upload trace1 \n");
+    if(ret != -ENETUNREACH) {
+        TEST_FAIL("testDocuement upload close connection in StartUploading progress 0 case1,ret is %d",ret);
+    }
     usleep(1000*10);
-    c->close();
-    usleep(1000*5000);
+    //c->close();
+    printf("client upload trace2 \n");
+    usleep(1000*50);
     setEnvPort(++port);
-    
-    if(result != -EBADF) {
-        TEST_FAIL("testDocuement simple upload error case1,result is %d",result);
+
+    if(center->getReadLinkNums() != 0) {
+        TEST_FAIL("testDocuement upload close connection in StartUploading progress 0 case2");
+    }
+        
+    if(center->getWriteLinkNums() != 0) {
+        TEST_FAIL("testDocuement upload close connection in StartUploading progress 0 case3");
     }
     
-    TEST_OK("testDocuement simple upload error case100");
+    if(center->getDownloadLinkNums() != 0) {
+        TEST_FAIL("testDocuement upload close connection in StartUploading progress 0 case3");
+    }
+    
+    if(center->getOpenLinkNums() != 0) {
+        TEST_FAIL("testDocuement upload close connection in StartUploading progress 0 case4");
+    }
+    
+    File uploadFile = File::New(String::New("./tmp/upload/uploaddata"));
+    
+    if(uploadFile->exists()) {
+        TEST_FAIL("testDocuement upload close connection in StartUploading progress 0 case5");
+    }
+    
+    TEST_OK("testDocuement upload close connection in StartUploading progress 0 case100");
 
     return 0;
 }

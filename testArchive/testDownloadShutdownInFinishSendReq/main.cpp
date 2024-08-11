@@ -59,12 +59,12 @@ int main() {
     File file = File::New("./tmp/testdata");
     if(!file->exists()) {
       file->createNewFile();
-      for(int i = 0;i<32;i++) {
+      for(int i = 0;i<1024;i++) {
         FileOutputStream stream = FileOutputStream::New(file);
         stream->open(O_APPEND);
         String data = String::New("");
-        for(int i = 0;i < 32;i++) {
-          data = data->append(String::New("xxxxxxxxxxxxxxxxxx"));
+        for(int i = 0;i < 1024;i++) {
+          data = data->append(String::New(st(System)::CurrentTimeMillis()));
         }
         stream->write(data->toByteArray());
         stream->close();
@@ -74,40 +74,31 @@ int main() {
     auto option = ArchiveOption::New();
     option->setHandler(MyHandler::New());
 
-    File uploadDir = File::New("./tmp/upload");
-    uploadDir->createDirs();
-    
     ArchiveCenter center = ArchiveCenter::New(url,option);
     center->start();
     usleep(1000*100);
     ArchiveConnection c = ArchiveConnection::New(url);
     c->connect();
-   
-    File f = File::New("./tmp/testdata");
-    int result = c->upload(f,[](int status,int progress) {
-        File rewriteFile = File::New("./tmp/testdata");
-        auto inputstream = FileInputStream::New(rewriteFile);
-        inputstream->open();
-        auto data = inputstream->readAll();
-        data[1] = 'c';
-
-        auto rewriteSteam = FileOutputStream::New(rewriteFile);
-        rewriteSteam->open(O_TRUNC);
-        
-        rewriteSteam->write(data);
-        rewriteSteam->flush();
-    });
     
+    int ret = c->download(String::New("testdata"),String::New("./tmp/downloaddata"),[&center](int status,int progress){
+        if(status == st(ArchiveConnection)::ProcessStatus::FinishSendReq) {
+            center->close();
+        }
+    });
     usleep(1000*10);
     c->close();
     usleep(1000*5000);
     setEnvPort(++port);
     
-    if(result != -EBADF) {
-        TEST_FAIL("testDocuement simple upload error case1,result is %d",result);
+    if(ret != -ENETUNREACH) {
+        TEST_FAIL("testDocuement shutdown in sendReq case1,ret is %d",ret);
     }
     
-    TEST_OK("testDocuement simple upload error case100");
-
+    File downloadfile = File::New(String::New("./tmp/downloaddata"));
+    if(downloadfile->exists()) {
+        TEST_FAIL("testDocuement shutdown in sendReq case2");
+    }
+   
+    TEST_OK("testDocuement shutdown in sendReq case100");
     return 0;
 }

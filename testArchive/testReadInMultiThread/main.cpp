@@ -107,7 +107,7 @@ int main() {
     
     for(int i = 0;i < 1024;i++) {
         auto data = results->get(i);
-        if(data->toString()->sameAs("12345678910abcdefghijklmnopqrstuvwxyz")) {
+        if(!data->toString()->sameAs("12345678910abcdefghijklmnopqrstuvwxyz")) {
             TEST_FAIL("testDocumentReadInMultiThread case2,result is %s",data->toString()->toChars());
             return 0;
         }

@@ -19,7 +19,6 @@
 #include "ArchiveInputStream.hpp"
 #include "ArchiveOutputStream.hpp"
 #include "TestLog.hpp"
-#include "Md.hpp"
 
 using namespace obotcha;
 using namespace gagira;
@@ -83,39 +82,32 @@ int main() {
     connection->connect();
     FetchRet(fileno,ret) = connection->openStream(String::New("testdata"),O_WRONLY|O_APPEND);
     auto output = ArchiveOutputStream::New(fileno,connection);
+    if(center->getWriteLinkNums() != 1) {
+        TEST_FAIL("testDocuement Close after open case1,num is %d",center->getWriteLinkNums());
+    }
     
-    ArchiveConnection connection2 = ArchiveConnection::New(url);
-    connection2->connect();
-    ret = connection2->download(String::New("testdata"),String::New("./tmp/downloadfile"));
-    if(ret == 0) {
-        TEST_FAIL("testDocuement download in Writing case1");
+    usleep(1000*50);
+    connection->close();
+    usleep(1000*50);
+    
+    if(center->getReadLinkNums() != 0) {
+        TEST_FAIL("testDocuement Close after open case2,num is %d",center->getReadLinkNums());
     }
-
-    sleep(1);
-    output->close();
-    ret = connection2->download(String::New("testdata"),String::New("./tmp/downloadfile"));
-    if(ret != 0) {
-        TEST_FAIL("testDocuement download in Writing case2,ret is %d",ret);
+    
+    if(center->getWriteLinkNums() != 0) {
+        TEST_FAIL("testDocuement Close after open case4,num is %d",center->getWriteLinkNums());
     }
-
-
-    File f = File::New("./tmp/downloadfile");
-    if(!f->exists()) {
-        TEST_FAIL("testDocuement download in Writing case3");
-        return 0;
+    
+    if(center->getDownloadLinkNums() != 0) {
+        TEST_FAIL("testDocuement Close after open case5,num is %d",center->getDownloadLinkNums());
     }
-
-    Md md5sum = Md::New();
-
-    String str1 = md5sum->encodeFile(File::New("./tmp/downloadfile"));
-    String str2 = md5sum->encodeFile(File::New("./tmp/testdata"));
-
-    if(!str1->sameAs(str2)) {
-        TEST_FAIL("testDocuement download in Writing case4");
+    
+    if(center->getOpenLinkNums() != 0) {
+        TEST_FAIL("testDocuement Close after open case6,num is %d",center->getOpenLinkNums());
     }
-
+    
     setEnvPort(++port);
     
-    TEST_OK("testDocuement download in Writing case100");
+    TEST_OK("testDocuement Close after open case100");
     return 0;
 }

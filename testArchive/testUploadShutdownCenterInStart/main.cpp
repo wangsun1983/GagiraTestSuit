@@ -16,9 +16,6 @@
 #include "Thread.hpp"
 #include "ArchiveConnection.hpp"
 #include "ArchiveCenter.hpp"
-#include "ArchiveInputStream.hpp"
-#include "ArchiveOutputStream.hpp"
-#include "TestLog.hpp"
 #include "Md.hpp"
 
 using namespace obotcha;
@@ -35,15 +32,10 @@ DECLARE_CLASS(MyHandler) IMPLEMENTS(DistributeHandler) {
 public:
     ArchiveHandleResult onRequest(DistributeLinker linker,ArchiveMessage msg) {
         switch(msg->getEvent()) {
-            case st(ArchiveMessage)::ApplyOpen: {
-               if(msg->getFileName()->contains("testdata")) {
-                    return ArchiveHandleResult(String::New("./tmp/testdata"));
-                } 
-            }
-            
             case st(ArchiveMessage)::ApplyUpload: {
                 if(msg->getFileName()->contains("testdata")) {
-                    return ArchiveHandleResult(String::New("./tmp/uploaddata"));
+                    String finalPath = String::New("./tmp/upload/uploaddata");
+                    return ArchiveHandleResult(String::New(finalPath));
                 }
             } break;
             
@@ -54,6 +46,8 @@ public:
         
         return nullptr;
     }
+private:
+    int count = 0;
 };
 
 int main() {
@@ -64,58 +58,51 @@ int main() {
     //prepare file
     File file = File::New("./tmp/testdata");
     if(!file->exists()) {
-        file->createNewFile();
+      file->createNewFile();
+      for(int i = 0;i<1024;i++) {
         FileOutputStream stream = FileOutputStream::New(file);
-        stream->open(st(IO)::FileControlFlags::Append);
-        String data = String::New("12345678910abcdefghijklmnopqrstuvwxyz");
+        stream->open(O_APPEND);
+        String data = String::New("");
+        for(int i = 0;i < 1024;i++) {
+          data = data->append(String::New(st(System)::CurrentTimeMillis()));
+        }
         stream->write(data->toByteArray());
         stream->close();
+      }
     }
     
     auto option = ArchiveOption::New();
     option->setHandler(MyHandler::New());
+
+    File uploadDir = File::New("./tmp/upload");
+    uploadDir->createDirs();
     
     ArchiveCenter center = ArchiveCenter::New(url,option);
     center->start();
     usleep(1000*100);
+    ArchiveConnection c = ArchiveConnection::New(url);
+    c->connect();
+   
+    File f = File::New("./tmp/testdata");
+    c->upload(f,[&center](int status,int progress) {
+        if(status == st(ArchiveConnection)::ProcessStatus::Start) {
+            center->close();
+        }
+    });
     
-    ArchiveConnection connection = ArchiveConnection::New(url);
-    connection->connect();
-    FetchRet(fileno,ret) = connection->openStream(String::New("testdata"),O_WRONLY|O_APPEND);
-    auto output = ArchiveOutputStream::New(fileno,connection);
+    usleep(1000*10);
+    c->close();
+    usleep(1000*50);
+    setEnvPort(++port);
     
-    ArchiveConnection connection2 = ArchiveConnection::New(url);
-    connection2->connect();
-    ret = connection2->download(String::New("testdata"),String::New("./tmp/downloadfile"));
-    if(ret == 0) {
-        TEST_FAIL("testDocuement download in Writing case1");
-    }
-
-    sleep(1);
-    output->close();
-    ret = connection2->download(String::New("testdata"),String::New("./tmp/downloadfile"));
-    if(ret != 0) {
-        TEST_FAIL("testDocuement download in Writing case2,ret is %d",ret);
-    }
-
-
-    File f = File::New("./tmp/downloadfile");
-    if(!f->exists()) {
-        TEST_FAIL("testDocuement download in Writing case3");
+    File uploadFile = File::New("./tmp/upload/uploaddata");
+    if(uploadFile->exists()) {
+        TEST_FAIL("testDocuement upload shutdown center in start case1");
         return 0;
     }
 
-    Md md5sum = Md::New();
-
-    String str1 = md5sum->encodeFile(File::New("./tmp/downloadfile"));
-    String str2 = md5sum->encodeFile(File::New("./tmp/testdata"));
-
-    if(!str1->sameAs(str2)) {
-        TEST_FAIL("testDocuement download in Writing case4");
-    }
-
-    setEnvPort(++port);
     
-    TEST_OK("testDocuement download in Writing case100");
+    TEST_OK("testDocuement upload shutdown center in start case100");
+
     return 0;
 }
