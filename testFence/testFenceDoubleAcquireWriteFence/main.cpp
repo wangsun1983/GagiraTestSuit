@@ -28,17 +28,17 @@ int main() {
     String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
     printf("trace1 \n");
-    FenceCenter center = createFenceCenter(url,nullptr);
+    FenceCenter center = FenceCenter::New(url,nullptr);
     center->start();
     usleep(1000*100);
-    TimeWatcher watch = createTimeWatcher();
+    TimeWatcher watch = TimeWatcher::New();
 
     Thread t1 = Thread::New([&]{
         usleep(1000*200);
-        FenceConnection c = createFenceConnection(url);
+        FenceConnection c = FenceConnection::New(url);
         c->connect();
 
-        TimeWatcher local_watch = createTimeWatcher();
+        TimeWatcher local_watch = TimeWatcher::New();
         local_watch->start();
         c->acquireReadFence(String::New("abc"));
         auto cost = watch->stop();
@@ -60,7 +60,7 @@ int main() {
     });
 
     Thread t2 = Thread::New([&]{
-        FenceConnection c = createFenceConnection(url);
+        FenceConnection c = FenceConnection::New(url);
         c->connect();
 
         c->acquireWriteFence(String::New("abc"));

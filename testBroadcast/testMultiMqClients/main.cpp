@@ -9,20 +9,20 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch1 = createCountDownLatch(1024*12);
-CountDownLatch latch2 = createCountDownLatch(1024*12);
+CountDownLatch latch1 = CountDownLatch::New(1024*12);
+CountDownLatch latch2 = CountDownLatch::New(1024*12);
 
 int total = 1024*12;
 
@@ -34,7 +34,7 @@ public:
     }
 };
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     _ConnectionListener() {
         handler = createCountHandler();
@@ -79,7 +79,7 @@ int main() {
 
     if(pid == 0) {
         sleep(1);
-        MqConnection connection = createMqConnection(url,createConnectionListener());
+        BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
         connection->connect();
         connection->subscribeChannel("info");
         connection->subscribeChannel("info2");
@@ -87,11 +87,11 @@ int main() {
         latch1->await();
         latch2->await();
     } else {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl(url);
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->build();
         center->start();
-        MqConnection connection = createMqConnection(url);
+        BroadcastConnection connection = BroadcastConnection::New(url);
         connection->connect();
         sleep(3);
         

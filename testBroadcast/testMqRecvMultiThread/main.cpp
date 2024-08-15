@@ -9,21 +9,21 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch1 = createCountDownLatch(1);
-CountDownLatch latch2 = createCountDownLatch(1);
-CountDownLatch latch3 = createCountDownLatch(1);
+CountDownLatch latch1 = CountDownLatch::New(1);
+CountDownLatch latch2 = CountDownLatch::New(1);
+CountDownLatch latch3 = CountDownLatch::New(1);
 
 int total = 1024*32;
 
@@ -42,7 +42,7 @@ public:
     }
 };
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     _ConnectionListener(int t) {
         //handler = createCountHandler();
@@ -110,15 +110,15 @@ int main() {
 
     if(pid == 0) {
         sleep(1);
-        MqConnection connection1 = createMqConnection(url,createConnectionListener(1));
+        BroadcastConnection connection1 = BroadcastConnection::New(url,ConnectionListener::New(1));
         connection1->connect();
         connection1->subscribeChannel("info");
 
-        MqConnection connection2 = createMqConnection(url,createConnectionListener(2));
+        BroadcastConnection connection2 = BroadcastConnection::New(url,ConnectionListener::New(2));
         connection2->connect();
         connection2->subscribeChannel("info");
 
-        MqConnection connection3 = createMqConnection(url,createConnectionListener(3));
+        BroadcastConnection connection3 = BroadcastConnection::New(url,ConnectionListener::New(3));
         connection3->connect();
         connection3->subscribeChannel("info");
 
@@ -136,17 +136,17 @@ int main() {
         }
 
     } else {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl(url);
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->build();
         center->start();
-        MqConnection connection = createMqConnection(url);
+        BroadcastConnection connection = BroadcastConnection::New(url);
         connection->connect();
         sleep(2);
         String str = String::New("hello world");   
         ByteArray data = str->toByteArray();
-        MqMessageParam param = createMqMessageParam();
-        param->setFlags(st(MqMessage)::Publish);
+        BroadcastMessageParam param = BroadcastMessage::NewParam();
+        param->setFlags(st(BroadcastMessage)::Publish);
 
         for(int i = 0;i < total;i++) {
             connection->publishMessage("info",data,param);

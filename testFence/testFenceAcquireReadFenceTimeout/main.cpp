@@ -27,12 +27,12 @@ int main() {
     int port = getEnvPort();
     String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
-    FenceCenter center = createFenceCenter(url,nullptr);
+    FenceCenter center = FenceCenter::New(url,nullptr);
     center->start();
     usleep(1000*100);
 
     Thread t1 = Thread::New([&]{
-        FenceConnection c = createFenceConnection(url);
+        FenceConnection c = FenceConnection::New(url);
         c->connect();
         c->acquireReadFence(String::New("abc"));
         sleep(5);
@@ -40,11 +40,11 @@ int main() {
     });
 
     Thread t2 = Thread::New([&]{
-        FenceConnection c = createFenceConnection(url);
+        FenceConnection c = FenceConnection::New(url);
         usleep(1000 * 1000);
         c->connect();
 
-        TimeWatcher watch = createTimeWatcher();
+        TimeWatcher watch = TimeWatcher::New();
         watch->start();
         c->acquireWriteFence(String::New("abc"),3000);
         auto cost = watch->stop();

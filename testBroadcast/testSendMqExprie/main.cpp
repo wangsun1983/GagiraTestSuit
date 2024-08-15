@@ -8,12 +8,12 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 #include "MqDLQMessage.hpp"
@@ -22,7 +22,7 @@
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1);
+CountDownLatch latch = CountDownLatch::New(1);
 
 DECLARE_CLASS(StudentInfo) IMPLEMENTS(Serializable){
 public:
@@ -31,7 +31,7 @@ public:
     DECLARE_REFLECT_FIELD(StudentInfo,name,age);
 };
 
-DECLARE_CLASS(DLQListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(DLQListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
         MqDLQMessage message = createMqDLQMessage();
@@ -48,9 +48,9 @@ public:
 
         printf("token is %s \n",message->getToken()->toChars());
 
-        MqMessage mqMessage = st(MqMessage)::generateMessage(message->getData());
-        StudentInfo info = createStudentInfo();
-        info->deserialize(mqMessage->getData());
+        BroadcastMessage BroadcastMessage = st(BroadcastMessage)::generateMessage(message->getData());
+        StudentInfo info = StudentInfo::New();
+        info->deserialize(BroadcastMessage->getData());
         if(!info->name->equals("wang") && info->age != 12) {
             TEST_FAIL("test MqExpire send case3");
         }
@@ -81,24 +81,24 @@ public:
 int main() {
     int port = getEnvPort();
     String url = String::New("tcp://127.0.0.1:")->append(String::New(1424));
-    MqCenterBuilder builder = createMqCenterBuilder();
+    DistributeCenterBuilder builder = DistributeCenterBuilder::New();
     builder->setUrl(url);
-    MqCenter center = builder->build();
+    BroadcastCenter center = builder->build();
     int ret = center->start();
 
 
-    MqConnection connection = createMqConnection(url,createDLQListener());
+    BroadcastConnection connection = BroadcastConnection::New(url,createDLQListener());
     connection->connect();
     connection->subscribeDLQChannel();
 
     usleep(1000*50);
-    MqConnection connection2 = createMqConnection(url);
+    BroadcastConnection connection2 = BroadcastConnection::New(url);
     connection2->connect();
-    StudentInfo student = createStudentInfo();
+    StudentInfo student = StudentInfo::New();
     student->name = String::New("wang");
     student->age = 12;
     connection2->publishMessage("info",student,
-            createMqMessageParam()->setTTL(1)->build());
+            BroadcastMessage::NewParam()->setTTL(1)->build());
     usleep(1000 * 50);
     latch->await();
 

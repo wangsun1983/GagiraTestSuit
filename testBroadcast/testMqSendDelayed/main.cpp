@@ -8,12 +8,12 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 #include "TimeWatcher.hpp"
@@ -21,7 +21,7 @@
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1);
+CountDownLatch latch = CountDownLatch::New(1);
 
 DECLARE_CLASS(StudentInfo) IMPLEMENTS(Serializable){
 public:
@@ -30,10 +30,10 @@ public:
     DECLARE_REFLECT_FIELD(StudentInfo,name,age);
 };
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
-        StudentInfo info = createStudentInfo();
+        StudentInfo info = StudentInfo::New();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
             TEST_FAIL("testMqSendDelayed case1,name is %s,age is %d",info->name->toChars(),info->age);
@@ -63,21 +63,21 @@ public:
 int main() {
     int port = getEnvPort();
     String url = String::New("tcp://127.0.0.1:")->append(String::New(1464));
-    MqCenterBuilder builder = createMqCenterBuilder();
+    DistributeCenterBuilder builder = DistributeCenterBuilder::New();
     builder->setUrl(url);
-    MqCenter center = builder->build();
+    BroadcastCenter center = builder->build();
     int ret = center->start();
-    MqConnection connection = createMqConnection(url,createConnectionListener());
+    BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
     connection->connect();
     connection->subscribeChannel("info");
 
-    StudentInfo student = createStudentInfo();
+    StudentInfo student = StudentInfo::New();
     student->name = String::New("wang");
     student->age = 12;
-    MqMessageParam param = createMqMessageParam();
+    BroadcastMessageParam param = BroadcastMessage::NewParam();
     param->setDelayInterval(300);
     TimeWatcher watch = createTimeWatcher();
-    MqConnection connection2 = createMqConnection(url);
+    BroadcastConnection connection2 = BroadcastConnection::New(url);
     connection2->connect();
 
     watch->start();

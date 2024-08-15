@@ -9,19 +9,19 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1);
+CountDownLatch latch = CountDownLatch::New(1);
 
 DECLARE_CLASS(StudentInfo) IMPLEMENTS(Serializable){
 public:
@@ -30,10 +30,10 @@ public:
     DECLARE_REFLECT_FIELD(StudentInfo,name,age);
 };
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
-        StudentInfo info = createStudentInfo();
+        StudentInfo info = StudentInfo::New();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
             TEST_FAIL("testMqSendStick case1,name is %s,age is %d",info->name->toChars(),info->age);
@@ -84,14 +84,14 @@ int main() {
     int pid = fork();
 
     if(pid != 0) {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl(url);
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->build();
         center->start();
-        MqConnection connection = createMqConnection(url);
+        BroadcastConnection connection = BroadcastConnection::New(url);
         connection->connect();
         
-        StudentInfo student = createStudentInfo();
+        StudentInfo student = StudentInfo::New();
         student->name = String::New("wang");
         student->age = 12;
         printf("send stick message");
@@ -102,7 +102,7 @@ int main() {
         TEST_OK("testMqSendStick case101");
     } else {
       sleep(1);
-      MqConnection connection = createMqConnection(url,createConnectionListener());
+      BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
       connection->connect();
       connection->subscribeChannel("info");
       latch->await();

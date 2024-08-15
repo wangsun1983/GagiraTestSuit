@@ -27,12 +27,12 @@ int main() {
     int port = getEnvPort();
     String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
-    FenceCenter center = createFenceCenter(url,nullptr);
+    FenceCenter center = FenceCenter::New(url,nullptr);
     center->start();
     usleep(1000*100);
 
     Thread t1 = Thread::New([&]{
-        FenceConnection c = createFenceConnection(url);
+        FenceConnection c = FenceConnection::New(url);
         c->connect();
         c->acquireFence(String::New("abc"));
         sleep(5);
@@ -41,17 +41,25 @@ int main() {
 
     Thread t2 = Thread::New([&]{
         usleep(1000 * 1000);
-        FenceConnection c = createFenceConnection(url);
+        FenceConnection c = FenceConnection::New(url);
         c->connect();
 
-        TimeWatcher watch = createTimeWatcher();
+        TimeWatcher watch = TimeWatcher::New();
         watch->start();
         int ret = c->acquireFence(String::New("abc"),3000);
         auto cost = watch->stop();
         if(cost > 3050) {
           TEST_FAIL("testFenceAcquireTimeout case2 ,cost is %d",cost);
         }
-        c->releaseFence(String::New("abc"));
+        
+        if(ret != -ETIMEDOUT) {
+          TEST_FAIL("testFenceAcquireTimeout case3 ,ret is %d",ret);
+        }
+        
+        ret = c->releaseFence(String::New("abc"));
+        if(ret != -EINVAL) {
+            TEST_FAIL("testFenceAcquireTimeout case4 ,ret is %d",ret);
+        }
     });
 
     t1->start();

@@ -8,19 +8,19 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
         return 0;
@@ -52,14 +52,14 @@ int main() {
 
     if(pid != 0) {
         sleep(1);
-        MqConnection connection = createMqConnection(url,createConnectionListener());
+        BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
         connection->connect();
         connection->unSubscribeChannel("info");
         TEST_OK("testMqUnsubscribeWithNoSubscribe case100");
     } else {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl(url);
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->build();
         center->start();
         port++;
         setEnvPort(port);

@@ -8,12 +8,12 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "AtomicInteger.hpp"
 #include "NetPort.hpp"
@@ -21,7 +21,7 @@
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1);
+CountDownLatch latch = CountDownLatch::New(1);
 
 //AtomicInteger times = createAtomicInteger(0);
 
@@ -32,10 +32,10 @@ public:
     DECLARE_REFLECT_FIELD(StudentInfo,name,age);
 };
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
-        StudentInfo info = createStudentInfo();
+        StudentInfo info = StudentInfo::New();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
             TEST_FAIL("testMqSendOneShotMultiClients case1,name is %s,age is %d",info->name->toChars(),info->age);
@@ -57,33 +57,33 @@ int main() {
     int port = getEnvPort();
     String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
-    MqCenterBuilder builder = createMqCenterBuilder();
+    DistributeCenterBuilder builder = DistributeCenterBuilder::New();
     builder->setUrl(url);
 
-    MqCenter center = builder->build();
+    BroadcastCenter center = builder->build();
     center->start();
     
-    ConnectionListener listener1 = createConnectionListener();
-    MqConnection connection1 = createMqConnection(url,listener1);
+    ConnectionListener listener1 = ConnectionListener::New();
+    BroadcastConnection connection1 = BroadcastConnection::New(url,listener1);
     connection1->connect();
     connection1->subscribeChannel("info");
 
-    ConnectionListener listener2 = createConnectionListener();
-    MqConnection connection2 = createMqConnection(url,listener2);
+    ConnectionListener listener2 = ConnectionListener::New();
+    BroadcastConnection connection2 = BroadcastConnection::New(url,listener2);
     connection2->connect();
     connection2->subscribeChannel("info");
 
-    ConnectionListener listener3 = createConnectionListener();
-    MqConnection connection3 = createMqConnection(url,listener3);
+    ConnectionListener listener3 = ConnectionListener::New();
+    BroadcastConnection connection3 = BroadcastConnection::New(url,listener3);
     connection3->connect();
     connection3->subscribeChannel("info");
     usleep(1000 * 100);
 
-    StudentInfo student = createStudentInfo();
+    StudentInfo student = StudentInfo::New();
     student->name = String::New("wang");
     student->age = 12;
-    auto param = createMqMessageParam();
-    param->setFlags(st(MqMessage)::OneShotFlag);
+    auto param = BroadcastMessage::NewParam();
+    param->setFlags(st(BroadcastMessage)::OneShotFlag);
     for(int i = 0;i < 1024*32;i++) {
         connection1->publishMessage("info",student,param);
     }

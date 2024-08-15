@@ -9,12 +9,12 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "Process.hpp"
 #include "NetPort.hpp"
@@ -23,8 +23,8 @@ using namespace obotcha;
 using namespace gagira;
 
 int total = 1024*32;
-CountDownLatch latch = createCountDownLatch(1);
-CountDownLatch exitlatch = createCountDownLatch(1);
+CountDownLatch latch = CountDownLatch::New(1);
+CountDownLatch exitlatch = CountDownLatch::New(1);
 
 DECLARE_CLASS(CountHandler) IMPLEMENTS(Handler) {
 public:
@@ -48,7 +48,7 @@ public:
 };
 
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     _ConnectionListener() {
         handler = createCountHandler();
@@ -115,7 +115,7 @@ int main() {
 
     if(pid != 0) {
         sleep(1);
-        MqConnection connection = createMqConnection(url,createConnectionListener());
+        BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
         connection->connect();
         connection->subscribeChannel("info");
         MyHandler h = MyHandler::New(latch);
@@ -123,11 +123,11 @@ int main() {
         latch->await();
         connection->publishMessage(String::New("close"),String::New("abc"));
     } else {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl(url);
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->build();
         center->start();
-        MqConnection connection = createMqConnection(url);
+        BroadcastConnection connection = BroadcastConnection::New(url);
         connection->connect();
 
         connection->subscribeChannel("close");
@@ -142,7 +142,7 @@ int main() {
             p->age = i;
             student->data = p->serialize();
             connection->publishMessage("info",student,
-                createMqMessageParam()->setFlags(st(MqMessage)::OneShotFlag)->build());
+                BroadcastMessage::NewParam()->setFlags(st(BroadcastMessage)::OneShotFlag)->build());
         }
 
         exitlatch->await();

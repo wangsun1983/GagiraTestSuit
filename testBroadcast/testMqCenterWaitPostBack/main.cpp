@@ -8,20 +8,20 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
-#include "MqSustainMessage.hpp"
+#include "BroadcastSustainMessage.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1);
+CountDownLatch latch = CountDownLatch::New(1);
 
 DECLARE_CLASS(StudentInfo) IMPLEMENTS(Serializable){
 public:
@@ -30,7 +30,7 @@ public:
     DECLARE_REFLECT_FIELD(StudentInfo,name,age);
 };
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
         //TODO
@@ -54,8 +54,8 @@ public:
 
     void onSustain(int code,String msg) {
         printf("on sustain \n");
-        if(code != st(MqSustainMessage)::WaitForPostBack) {
-            TEST_FAIL("testMqCenterWaitPostBack case1");
+        if(code != st(BroadcastSustainMessage)::WaitForPostBack) {
+            TEST_FAIL("testBroadcastCenterWaitPostBack case1");
         }
         latch->countDown();
     }
@@ -66,27 +66,27 @@ int main() {
     int port = getEnvPort();
     String url = String::New("tcp://127.0.0.1:")->append(String::New(1110));
 
-    MqCenterBuilder builder = createMqCenterBuilder();
+    DistributeCenterBuilder builder = DistributeCenterBuilder::New();
     builder->setUrl(url);
-    MqOption option = createMqOption();
+    DistributeOption option = DistributeOption::New();
     option->setWaitPostBack(true);
     builder->setOption(option);
-    MqCenter center = builder->build();
+    BroadcastCenter center = builder->build();
     int ret = center->start();
     printf("mqsend ret is %d \n",ret);
-    MqConnection connection = createMqConnection(url,createConnectionListener());
+    BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
     connection->connect();
     //start send
     usleep(1000 * 100);
     
-    StudentInfo student = createStudentInfo();
+    StudentInfo student = StudentInfo::New();
     student->name = String::New("wang");
     student->age = 12;
     connection->publishMessage("info",student,
-        createMqMessageParam()->setFlags(st(MqMessage)::OneShotFlag)->build());
+        BroadcastMessage::NewParam()->setFlags(st(BroadcastMessage)::OneShotFlag)->build());
 
     latch->await();
 
-    TEST_OK("testMqCenterWaitPostBack case100");
+    TEST_OK("testBroadcastCenterWaitPostBack case100");
     return 0;
 }

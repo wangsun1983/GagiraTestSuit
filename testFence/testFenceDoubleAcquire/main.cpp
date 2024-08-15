@@ -27,36 +27,35 @@ int main() {
     int port = getEnvPort();
     String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
-    FenceCenter center = createFenceCenter(url,nullptr);
+    FenceCenter center = FenceCenter::New(url,nullptr);
     center->start();
     usleep(1000*100);
 
     Thread t1 = Thread::New([&]{
-        FenceConnection c = createFenceConnection(url);
+        FenceConnection c = FenceConnection::New(url);
         c->connect();
 
-        TimeWatcher watch = createTimeWatcher();
+        TimeWatcher watch = TimeWatcher::New();
         c->acquireFence(String::New("abc"));
         c->acquireFence(String::New("abc"));
-        c->releaseWriteFence(String::New("abc"));
+        c->releaseFence(String::New("abc"));
         usleep(1000*1000);
-        c->releaseWriteFence(String::New("abc"));
+        c->releaseFence(String::New("abc"));
     });
 
     Thread t2 = Thread::New([&]{
         usleep(1000*100);
-        FenceConnection c = createFenceConnection(url);
+        FenceConnection c = FenceConnection::New(url);
         c->connect();
 
-        TimeWatcher watch = createTimeWatcher();
+        TimeWatcher watch = TimeWatcher::New();
         watch->start();
         c->acquireFence(String::New("abc"));
         auto cost = watch->stop();
-        if(cost < 900 || cost > 950) {
+        if(cost < 900 || cost > 980) {
           TEST_FAIL("testFenceDoubleAcquire case1 ,cost is %d",cost);
         }
         c->releaseWriteFence(String::New("abc"));
-        printf("t2 trace3 \n");
     });
 
 

@@ -8,12 +8,12 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 #include "Thread.hpp"
@@ -21,7 +21,7 @@
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1024*32);
+CountDownLatch latch = CountDownLatch::New(1024*32);
 
 DECLARE_CLASS(StudentInfo) IMPLEMENTS(Serializable){
 public:
@@ -30,12 +30,12 @@ public:
     DECLARE_REFLECT_FIELD(StudentInfo,name,age);
 };
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
-        StudentInfo info = createStudentInfo();
+        StudentInfo info = StudentInfo::New();
         info->deserialize(data);
-        if(!info->name->equals("wang") && info->age != 12) {
+        if(!info->name->sameAs("wang") && info->age != 12) {
             TEST_FAIL("testmqsend case1,name is %s,age is %d",info->name->toChars(),info->age);
         }
         latch->countDown();
@@ -83,7 +83,7 @@ int main() {
     
     Thread t1 = Thread::New([&url] {
         sleep(1);
-        MqConnection connection = createMqConnection(url,createConnectionListener());
+        BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
         connection->connect();
         connection->subscribeChannel("info");
         MyHandler h = MyHandler::New(latch);
@@ -93,21 +93,21 @@ int main() {
     });
         
     Thread t2 = Thread::New([&url] {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl(url);
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->buildBroadcastCenter();
         int ret = center->start();
         printf("mqsend ret is %d \n",ret);
-        MqConnection connection = createMqConnection(url);
+        BroadcastConnection connection = BroadcastConnection::New(url);
         connection->connect();
         //start send
         sleep(2);
         for(int i = 0; i <1024*32;i++) {
-            StudentInfo student = createStudentInfo();
+            StudentInfo student = StudentInfo::New();
             student->name = String::New("wang");
             student->age = 12;
             connection->publishMessage("info",student,
-                createMqMessageParam()->setFlags(st(MqMessage)::OneShotFlag)->build());
+                BroadcastMessageParam::New()->setFlags(st(BroadcastMessage)::OneShotFlag)->build());
         }
         sleep(5);
     });

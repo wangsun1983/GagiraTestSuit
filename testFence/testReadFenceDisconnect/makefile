@@ -12,6 +12,8 @@ cflags = -fpic \
 		-I ../../../3rdparty/Obotcha/include/util/concurrent/ \
 		-I ../../../3rdparty/Obotcha/include/util/coroutine/ \
 		-I ../../../3rdparty/Obotcha/include/util/text/ \
+        -I ../../../3rdparty/Obotcha/include/util/time/ \
+        -I ../../../3rdparty/Obotcha/include/util/handler/ \
 		-I ../../../3rdparty/Obotcha/include/util/sql/ \
 		-I ../../../3rdparty/Obotcha/include/lang/ \
 		-I ../../../3rdparty/Obotcha/include/io/ \
@@ -41,7 +43,7 @@ cflags = -fpic \
 		-I ../../../framework/config/include/ \
 		-I ../../common/ \
 		-g \
-		-std=c++14 \
+		-std=c++17 \
 		-fsanitize=address \
 		-fno-omit-frame-pointer
 
@@ -61,7 +63,7 @@ link =
 libname	= gagira
 
 cppflags=$(cflags) \
-		 -std=c++14
+		 -std=c++17
 
 gagiracppflags = $(cppflags)
 

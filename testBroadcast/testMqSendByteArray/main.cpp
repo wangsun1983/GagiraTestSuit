@@ -8,21 +8,21 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1);
+CountDownLatch latch = CountDownLatch::New(1);
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
         printf("onMessage \n");
@@ -51,19 +51,19 @@ int main() {
     if(pid != 0) {
         sleep(1);
         printf("connection trace1 \n");
-        MqConnection connection = createMqConnection(url,createConnectionListener());
+        BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
         connection->connect();
         printf("connection trace2 \n");
         connection->subscribeChannel("info");
         printf("connection trace3 \n");
         latch->await();
     } else {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl(url);
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->build();
         center->start();
         usleep(1000*100);
-        MqConnection connection = createMqConnection(url);
+        BroadcastConnection connection = BroadcastConnection::New(url);
         connection->connect();
         
         ByteArray array = ByteArray::New(1024);
@@ -71,8 +71,8 @@ int main() {
             array[i] = i%255;
         }
 
-        MqMessageParam param = createMqMessageParam();
-        param->setFlags(st(MqMessage)::OneShotFlag|st(MqMessage)::AcknowledgeFlag);
+        BroadcastMessageParam param = BroadcastMessage::NewParam();
+        param->setFlags(st(BroadcastMessage)::OneShotFlag|st(BroadcastMessage)::AcknowledgeFlag);
         connection->publishMessage("info",
                                     array,
                                     param);

@@ -9,19 +9,19 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1024*32);
+CountDownLatch latch = CountDownLatch::New(1024*32);
 
 DECLARE_CLASS(StudentInfo) IMPLEMENTS(Serializable){
 public:
@@ -30,10 +30,10 @@ public:
     DECLARE_REFLECT_FIELD(StudentInfo,name,age);
 };
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
-        StudentInfo info = createStudentInfo();
+        StudentInfo info = StudentInfo::New();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
             TEST_FAIL("testmqsendPersistMsg case1,name is %s,age is %d",info->name->toChars(),info->age);
@@ -61,10 +61,10 @@ public:
 };
 
 AtomicInteger persistentCount = createAtomicInteger(0);
-DECLARE_CLASS(PersistentConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(PersistentConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
-        StudentInfo info = createStudentInfo();
+        StudentInfo info = StudentInfo::New();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
             TEST_FAIL("testmqsendPersistMsg case1,name is %s,age is %d",info->name->toChars(),info->age);
@@ -116,7 +116,7 @@ int main() {
 
     if(pid != 0) {
         sleep(1);
-        MqConnection connection = createMqConnection(url,createConnectionListener());
+        BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
         connection->connect();
         connection->subscribeChannel("info");
         MyHandler h = MyHandler::New(latch);
@@ -125,25 +125,25 @@ int main() {
         setEnvPort(++port);
         TEST_OK("testmqsendPersistMsg case100");
     } else {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl(url);
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->build();
         int ret = center->start();
         printf("mqsend ret is %d \n",ret);
-        MqConnection connection = createMqConnection(url);
+        BroadcastConnection connection = BroadcastConnection::New(url);
         connection->connect();
 
-        MqConnection dataconnection = createMqConnection(url,createPersistentConnectionListener());
+        BroadcastConnection dataconnection = BroadcastConnection::New(url,createPersistentConnectionListener());
         dataconnection->connect();
         dataconnection->subscribePersistenceChannel();
         //start send
         sleep(2);
         for(int i = 0; i <1024*32;i++) {
-            StudentInfo student = createStudentInfo();
+            StudentInfo student = StudentInfo::New();
             student->name = String::New("wang");
             student->age = 12;
-            MqMessageParam param = createMqMessageParam();
-            param->setFlags(st(MqMessage)::OneShotFlag|st(MqMessage)::PersistFlag);
+            BroadcastMessageParam param = BroadcastMessage::NewParam();
+            param->setFlags(st(BroadcastMessage)::OneShotFlag|st(BroadcastMessage)::PersistFlag);
             connection->publishMessage("info",student,param);
         }
         sleep(5);

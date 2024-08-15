@@ -8,12 +8,12 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 
@@ -23,7 +23,7 @@ using namespace gagira;
 int gDisconnect = 0;
 int gConnect = 0;
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
         return 1;
@@ -57,22 +57,22 @@ int main() {
 
     if(pid != 0) {
         sleep(1);
-        MqConnection connection = createMqConnection(url,createConnectionListener());
+        BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
         connection->connect();
         sleep(10);
         if(gDisconnect != 100) {
-          TEST_FAIL("testMqConnectionDisconnect case1,disconnect is %d",gDisconnect);
+          TEST_FAIL("testBroadcastConnectionDisconnect case1,disconnect is %d",gDisconnect);
         }
 
         if(gConnect != 200) {
-          TEST_FAIL("testMqConnectionConnect case2,connect is %d",gConnect);
+          TEST_FAIL("testBroadcastConnectionConnect case2,connect is %d",gConnect);
         }
 
-        TEST_OK("testMqConnectionDisconnect case3");
+        TEST_OK("testBroadcastConnectionDisconnect case3");
     } else {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl(url);
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->build();
         center->start();
         sleep(5);
         center->close();

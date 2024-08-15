@@ -8,12 +8,12 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 
@@ -27,10 +27,10 @@ public:
     DECLARE_REFLECT_FIELD(StudentInfo,name,age);
 };
 
-CountDownLatch latch1 = createCountDownLatch(1);
-CountDownLatch latch2 = createCountDownLatch(1);
+CountDownLatch latch1 = CountDownLatch::New(1);
+CountDownLatch latch2 = CountDownLatch::New(1);
 
-DECLARE_CLASS(ConnectionListener1) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener1) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
         TEST_FAIL("testMqSendToSelf case1");
@@ -55,10 +55,10 @@ public:
     void onSustain(int code,String msg){}
 };
 
-DECLARE_CLASS(ConnectionListener2) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener2) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
-        StudentInfo info = createStudentInfo();
+        StudentInfo info = StudentInfo::New();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
             TEST_FAIL("testMqSendToSelf case2,name is %s,age is %d",info->name->toChars(),info->age);
@@ -92,21 +92,21 @@ int main() {
     int port = getEnvPort();
     String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
 
-    MqCenterBuilder builder = createMqCenterBuilder();
+    DistributeCenterBuilder builder = DistributeCenterBuilder::New();
     builder->setUrl(url);
-    MqOption option = createMqOption();
-    MqCenter center = builder->build();
+    DistributeOption option = DistributeOption::New();
+    BroadcastCenter center = builder->build();
     int ret = center->start();
     
-    MqConnection connection = createMqConnection(url,createConnectionListener1());
+    BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New1());
     connection->connect();
     connection->subscribeChannel("info");
     
-    MqConnection connection2 = createMqConnection(url,createConnectionListener2());
+    BroadcastConnection connection2 = BroadcastConnection::New(url,ConnectionListener::New2());
     connection2->connect();
     connection2->subscribeChannel("info");
 
-    StudentInfo student = createStudentInfo();
+    StudentInfo student = StudentInfo::New();
     student->name = String::New("wang");
     student->age = 12;
     connection->publishMessage("info",student);

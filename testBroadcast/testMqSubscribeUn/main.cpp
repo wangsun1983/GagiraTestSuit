@@ -9,19 +9,19 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 #include "NetPort.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(1);
+CountDownLatch latch = CountDownLatch::New(1);
 int total = 1024*12;
 
 DECLARE_CLASS(CountHandler) IMPLEMENTS(Handler) {
@@ -32,7 +32,7 @@ public:
     }
 };
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     _ConnectionListener() {
         handler = createCountHandler();
@@ -81,7 +81,7 @@ int main() {
     if(pid == 0) {
         sleep(1);
 
-        MqConnection connection = createMqConnection(url,createConnectionListener());
+        BroadcastConnection connection = BroadcastConnection::New(url,ConnectionListener::New());
         connection->connect();
         int count = 0;
         while(count < 1024) {
@@ -92,18 +92,18 @@ int main() {
         connection->subscribeChannel("info");
         latch->await();
     } else {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl(url);
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->build();
         center->start();
-        MqConnection connection = createMqConnection(url);
+        BroadcastConnection connection = BroadcastConnection::New(url);
         connection->connect();
         sleep(3);
         
         String str = String::New("hello world");
         ByteArray data = str->toByteArray();
-        auto param = createMqMessageParam();
-        param->setFlags(st(MqMessage)::OneShotFlag);
+        auto param = BroadcastMessage::NewParam();
+        param->setFlags(st(BroadcastMessage)::OneShotFlag);
 
         for(int i = 0;i < total;i++) {
             connection->publishMessage("info",data,param);

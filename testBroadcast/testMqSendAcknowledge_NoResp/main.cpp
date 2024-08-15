@@ -8,18 +8,18 @@
 #include "HttpResourceManager.hpp"
 #include "Reflect.hpp"
 #include "Utils.hpp"
-#include "MqCenter.hpp"
-#include "MqConnection.hpp"
+#include "BroadcastCenter.hpp"
+#include "BroadcastConnection.hpp"
 #include "Serializable.hpp"
 #include "CountDownLatch.hpp"
 #include "TestLog.hpp"
-#include "MqCenterBuilder.hpp"
+#include "DistributeCenterBuilder.hpp"
 #include "Handler.hpp"
 
 using namespace obotcha;
 using namespace gagira;
 
-CountDownLatch latch = createCountDownLatch(4);
+CountDownLatch latch = CountDownLatch::New(4);
 
 DECLARE_CLASS(StudentInfo) IMPLEMENTS(Serializable){
 public:
@@ -28,10 +28,10 @@ public:
     DECLARE_REFLECT_FIELD(StudentInfo,name,age);
 };
 
-DECLARE_CLASS(ConnectionListener) IMPLEMENTS(MqConnectionListener) {
+DECLARE_CLASS(ConnectionListener) IMPLEMENTS(BroadcastConnectionListener) {
 public:
     int onMessage(String channel,ByteArray data) {
-        StudentInfo info = createStudentInfo();
+        StudentInfo info = StudentInfo::New();
         info->deserialize(data);
         if(!info->name->equals("wang") && info->age != 12) {
             TEST_FAIL("testmqsend case1,name is %s,age is %d",info->name->toChars(),info->age);
@@ -64,7 +64,7 @@ int main() {
 
     if(pid != 0) {
         usleep(1000*100);
-        MqConnection connection = createMqConnection("tcp://127.0.0.1:1320",createConnectionListener());
+        BroadcastConnection connection = BroadcastConnection::New("tcp://127.0.0.1:1320",ConnectionListener::New());
         connection->connect();
         connection->subscribeChannel("info");
         latch->await(1000*5);
@@ -73,20 +73,20 @@ int main() {
         }
         TEST_OK("testmqsend case100");
     } else {
-        MqCenterBuilder builder = createMqCenterBuilder();
+        DistributeCenterBuilder builder = DistributeCenterBuilder::New();
         builder->setUrl("tcp://127.0.0.1:1320");
-        MqCenter center = builder->build();
+        BroadcastCenter center = builder->build();
         int ret = center->start();
         //printf("mqsend ret is %d \n",ret);
-        MqConnection connection = createMqConnection("tcp://127.0.0.1:1320");
+        BroadcastConnection connection = BroadcastConnection::New("tcp://127.0.0.1:1320");
         connection->connect();
         //start send
         usleep(1000*200);
-        StudentInfo student = createStudentInfo();
+        StudentInfo student = StudentInfo::New();
         student->name = String::New("wang");
         student->age = 12;
         connection->publishMessage("info",student,
-            createMqMessageParam()->setFlags(st(MqMessage)::AcknowledgeFlag)->build());
+            BroadcastMessage::NewParam()->setFlags(st(BroadcastMessage)::AcknowledgeFlag)->build());
         sleep(6);
     }
 
