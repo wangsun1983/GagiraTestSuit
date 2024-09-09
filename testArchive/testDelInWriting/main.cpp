@@ -64,7 +64,8 @@ public:
 int main() {
     int port = getEnvPort();
     String url = String::New("tcp://127.0.0.1:")->append(String::New(port));
-    
+    // url = nullptr;
+    // printf("size is %s",url->toChars());
     //create file
     //prepare file
     File file = File::New("./tmp/testdata");

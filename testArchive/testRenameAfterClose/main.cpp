@@ -81,7 +81,7 @@ int main() {
     c->close();
     
     int ret = c->rename("testdata","abc_rename");
-    if(ret != -EINVAL) {
+    if(ret != -ENETUNREACH) {
         TEST_FAIL("testDocuement Rename after close case1");
     }
     

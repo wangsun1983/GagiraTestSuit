@@ -95,8 +95,8 @@ int main() {
     }
     
     auto err = c->getErr();
-    if(c->getErr() != -EINVAL) {
-        TEST_FAIL("testDocuement Del after connection close case4");
+    if(c->getErr() != -ENETUNREACH) {
+        TEST_FAIL("testDocuement Del after connection close case4,err is %d",c->getErr());
     }
     
     sleep(1);

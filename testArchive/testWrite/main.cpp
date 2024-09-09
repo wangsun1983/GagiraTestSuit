@@ -18,7 +18,7 @@
 #include "ArchiveCenter.hpp"
 #include "ArchiveInputStream.hpp"
 #include "ArchiveOutputStream.hpp"
-#include "ArchiveClient.hpp"
+#include "ArchiveFactory.hpp"
 
 using namespace obotcha;
 using namespace gagira;
@@ -78,8 +78,8 @@ int main() {
     center->start();
     usleep(1000*100);
 
-    ArchiveClient client = ArchiveClient::New(url);
-    client->connect(); 
+    ArchiveFactory client = ArchiveFactory::New(url);
+    //client->connect(); 
     auto output = client->openAppendWrite(String::New("testdata"));
     String data = String::New("waggg");
     auto len = output->write(data->toByteArray());

@@ -93,22 +93,24 @@ int main() {
     
     ArchiveConnection c = ArchiveConnection::New(url);
     int ret1 = c->connect();
-
+    printf("client trace1 \n");
     File f = File::New("./tmp/testdata");
     int ret = c->upload(f);
     if(ret != -EPERM) {
         TEST_FAIL("testDocuement Deny case1,ret is %d",ret);
     }
     sleep(1);
-    
+    printf("client trace2 \n");
     ArchiveConnection c2 = ArchiveConnection::New(url);
     c2->connect();
     int ret2 = c2->download("testdata","./tmp/abc");
     if(ret2 != -EPERM) {
         TEST_FAIL("testDocuement Deny case2,ret is %d",ret);
     }
+    printf("client trace3 \n");
     sleep(1);
     setEnvPort(++port);
+    printf("client trace4 \n");
     TEST_OK("testDocuement Deny case100");
     return 0;
 }

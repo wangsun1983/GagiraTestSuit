@@ -67,7 +67,6 @@ int main() {
         stream->close();
       }
     }
-    
     auto option = ArchiveOption::New();
     option->setHandler(MyHandler::New());
     ArchiveCenter center = ArchiveCenter::New(url,option);

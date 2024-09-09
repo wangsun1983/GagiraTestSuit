@@ -84,18 +84,24 @@ int main() {
     c->connect();
    
     File f = File::New("./tmp/testdata");
-    int result = c->upload(f,[](int status,int progress) {
-        File rewriteFile = File::New("./tmp/testdata");
-        auto inputstream = FileInputStream::New(rewriteFile);
-        inputstream->open();
-        auto data = inputstream->readAll();
-        data[1] = 'c';
+    bool isSkip = false;
+    int result = c->upload(f,[&isSkip](int status,int progress) {
+        if(status == st(ArchiveConnection)::ProcessStatus::StartUploading) {
+            printf("rewrite start \n");
+            isSkip = true;
+            File rewriteFile = File::New("./tmp/testdata");
+            auto inputstream = FileInputStream::New(rewriteFile);
+            inputstream->open();
+            auto data = inputstream->readAll();
+            data[1] = 'c';
 
-        auto rewriteSteam = FileOutputStream::New(rewriteFile);
-        rewriteSteam->open(O_TRUNC);
+            auto rewriteSteam = FileOutputStream::New(rewriteFile);
+            rewriteSteam->open(O_TRUNC);
+            
+            rewriteSteam->write(data);
+            rewriteSteam->flush();
+        }
         
-        rewriteSteam->write(data);
-        rewriteSteam->flush();
     });
     
     usleep(1000*10);

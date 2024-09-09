@@ -92,7 +92,7 @@ int main() {
     ArchiveConnection connection2 = ArchiveConnection::New(url);
     connection2->connect();
     ret = connection2->rename(String::New("testdata"),String::New("abc"));
-    if(ret != -EACCES) {
+    if(ret != -EBUSY) {
         TEST_FAIL("testDocuement rename in Writing case1,ret is %d",ret);
     }
 

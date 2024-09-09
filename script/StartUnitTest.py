@@ -13,6 +13,8 @@ REPORT_DIR = '../Report'
 BUILD_REPORT_DIR ='../Report/BuildReport'
 EXECUTE_REPORT_DIR ='../Report/ExecuteReport'
 
+#precommand
+#sudo sysctl -w kernel.core_pattern=core
 
 class ItemType(Enum):
     TestNormal             = 1
@@ -176,7 +178,9 @@ def start_test():
         do_test(item)
 
 def do_test(item_path):
+    item_path = os.path.abspath(item_path)
     print("[",item_path,"] Start")
+    
     clear_old_files(item_path)
     os.popen("mkdir " + item_path + "/tmp").read()
     (execute_result_path,item_type) = prepare_item_type(item_path)
@@ -186,6 +190,10 @@ def do_test(item_path):
     
     execute_result = ""
     if item_type == ItemType.TestNormal:
+        #redirect core file
+        # redirec_path = " sudo sysctl -w kernel.core_pattern=" + item_path + "/core"
+        # os.popen(redirec_path).read();
+        
         execute_result = os.popen(create_mytest_command(item_path)).read()
         if execute_result.find("[FAIL]") > 0 or execute_result.find("[OK]") <=0 or execute_result.find("AddressSanitizer") > 0:
             execute_result_path += "FAIL.log"
@@ -298,11 +306,11 @@ def main():
     prepare_report()
     #scan_items("../testArchive")
     #scan_items("../testBroadcast")
-    scan_items("../testFence")
+    #scan_items("../testFence")
     #scan_items("../testHttpRouterMap")
     #scan_items("../testHttpServer")
     #scan_items("../testQueue")
-    #scan_items("../testSpace")
+    scan_items("../testMap")
     #scan_items("../testTemplate")
     #scan_items("../testSql")
     dump_build_items()

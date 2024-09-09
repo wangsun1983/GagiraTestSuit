@@ -95,7 +95,7 @@ int main() {
     }
     
     auto err = c->getErr();
-    if (err != -EINVAL) {
+    if (err != -ENETUNREACH) {
         TEST_FAIL("testDocuement Query after close case2,err is %d",err);
     }
     

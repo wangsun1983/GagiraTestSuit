@@ -18,7 +18,7 @@
 #include "ArchiveCenter.hpp"
 #include "ArchiveInputStream.hpp"
 #include "ArchiveOutputStream.hpp"
-#include "ArchiveClient.hpp"
+#include "ArchiveFactory.hpp"
 #include "ConcurrentQueue.hpp"
 
 using namespace obotcha;

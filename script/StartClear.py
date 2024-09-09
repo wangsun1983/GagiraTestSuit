@@ -34,7 +34,7 @@ def scan_items(path):
             else:
                 scan_items(folder_path)
         else:
-            if filename == "mytest":
+            if filename == "mytest" or filename == "core":
                 os.popen("rm " + folder_path).read()
 
 def print_logo():
