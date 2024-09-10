@@ -78,7 +78,7 @@ int main() {
             TEST_FAIL("testQueue2ClientWaitCloseConnection case2");
         }
         
-        if(result->err != -EPIPE) {
+        if(result->err != -ESHUTDOWN) {
             TEST_FAIL("testQueue2ClientWaitCloseConnection case3,err is %d",result->err);
         }
     });
@@ -97,7 +97,7 @@ int main() {
             TEST_FAIL("testQueue2ClientWaitCloseConnection case5");
         }
         
-        if(result->err != -EPIPE) {
+        if(result->err != -ESHUTDOWN) {
             TEST_FAIL("testQueue2ClientWaitCloseConnection case6,err is %d",result->err);
         }
     });

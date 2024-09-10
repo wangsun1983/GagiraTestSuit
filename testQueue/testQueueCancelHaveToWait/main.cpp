@@ -34,13 +34,6 @@ int count = 0;
 DECLARE_CLASS(CenterHandler) IMPLEMENTS(DistributeHandler) {
 public:
     int onRequest(DistributeLinker linker,QueueMessage msg) {
-        auto event = msg->getEvent();
-        if(event == st(QueueMessage)::EventType::Submit && count == 0) {
-            isHit = true;
-            count++;
-            return -1;
-        }
-        
         return 0;
     }
 };
@@ -52,34 +45,56 @@ int main() {
     option->setHandler(CenterHandler::New());
     
     QueueCenter center = QueueCenter::New(url,option);
+    center->setDelayProcessInterval(1000);
+    
     center->start();
     usleep(1000*100);
-    QueueConnection c = QueueConnection::New(url);
-    c->connect();
     
-    auto watcher = TimeWatcher::New();
-    Thread t = Thread::New([&]{
-        usleep(1000*100);
-        c->close();
+    Thread t1 = Thread::New([&]{
+        QueueConnection c = QueueConnection::New(url);
+        c->connect();
+        auto watcher = TimeWatcher::New();
+        watcher->start();
+        auto result = c->get<TaskInfo>(500);
+        auto cost = watcher->stop();
+        if(result->data == nullptr) {
+            TEST_FAIL("testQueueCancelHaveToWait case1");
+        }
+        
+        auto info = result->data;
+        if(!info->name->sameAs("abc")) {
+            TEST_FAIL("testQueueCancelHaveToWait case2");
+        }
+        
+        if(info->value != 123) {
+            TEST_FAIL("testQueueCancelHaveToWait case3");
+        }
+        
+        if(cost < 700) {
+            TEST_FAIL("testQueueCancelHaveToWait case4");
+        }
     });
-    t->start();
-    watcher->start();
-    auto result = c->get<TaskInfo>();
-    auto cost = watcher->stop();
     
-    if(cost > 120 || cost < 100) {
-        TEST_FAIL("testQueueWaitCloseConnection case1");
-    }
+    Thread t2 = Thread::New([&]{
+        usleep(1000*100);
+        TaskInfo info = TaskInfo::New();
+        info->name = String::New("abc");
+        info->value = 123;
+        
+        QueueConnection c = QueueConnection::New(url);
+        c->connect();
+        c->add(info);
+        usleep(1000*50);
+    });
+    t1->start();
+    t2->start();
     
-    if(result->data != nullptr) {
-        TEST_FAIL("testQueueWaitCloseConnection case2");
-    }
+    t1->join();
+    t2->join();
     
-    if(result->err != -ESHUTDOWN) {
-        TEST_FAIL("testQueueWaitCloseConnection case3,err is %d",result->err);
-    }
+  
     setEnvPort(++port);
     sleep(1);
-    TEST_OK("testQueueWaitCloseConnection case100");
+    TEST_OK("testQueueCancelHaveToWait case100");
     return 0;
 }

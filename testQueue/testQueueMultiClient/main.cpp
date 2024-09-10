@@ -49,7 +49,7 @@ int main() {
             c->add(task);
             vv += i;
         }
-        sleep(5);
+        sleep(10);
         printf("t1 start close \n");
         center->close();
     });
@@ -75,7 +75,6 @@ int main() {
             
             t2_count += id;
         }
-        usleep(1000*500);
     });
     
     uint32_t t3_count = 0;
@@ -99,7 +98,6 @@ int main() {
             
             t3_count += id;
         }
-        usleep(1000*500);
     });
     
     t1->start();
