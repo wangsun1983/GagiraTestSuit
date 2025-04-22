@@ -19,24 +19,24 @@ public:
 void test_class_member_boolean() {
     auto scopedValues = HashMap<String,TemplateScopedValue>::New();
     
-    // while(1) {
-    //     BoolData d = BoolData::New();
-    //     d->value = true;
-    //     String str1 = String::New(".value");
-    //     auto parser = TemplateFunctionParser::New(str1);
-    //     auto item = parser->doParse();
-    //     auto result = item->execute(scopedValues,d);
-    //     if(result->getBoolValue() != true) {
-    //         TEST_FAIL("testFunctionItem class_member_boolean case1 ,value is %d",
-    //                     result->getIntValue());
-    //     }
+    while(1) {
+        BoolData d = BoolData::New();
+        d->value = true;
+        String str1 = String::New(".value");
+        auto parser = TemplateFunctionParser::New(str1);
+        auto item = parser->doParse();
+        auto result = item->execute(scopedValues,d);
+        if(result->getBoolValue() != true) {
+            TEST_FAIL("testFunctionItem class_member_boolean case1 ,value is %d",
+                        result->getIntValue());
+        }
         
-    //     if(result->getType() != st(TemplateScopedValue)::Type::Bool) {
-    //         TEST_FAIL("testFunctionItem class_member_boolean case1_2 ,type is %d",
-    //                     result->getType());
-    //     }
-    //     break;
-    // } 
+        if(result->getType() != st(TemplateScopedValue)::Type::Bool) {
+            TEST_FAIL("testFunctionItem class_member_boolean case1_2 ,type is %d",
+                        result->getType());
+        }
+        break;
+    } 
     
     while(1) {
         BoolData d = BoolData::New();

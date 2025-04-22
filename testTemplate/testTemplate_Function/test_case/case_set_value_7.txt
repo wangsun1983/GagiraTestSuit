@@ -1,0 +1,16 @@
+{{
+  let int a = 100
+  a--
+  let int b = 200
+  b++
+  
+  let int c = -100
+  
+  let int d = -101
+  d++
+  
+  let int f = 5++
+  let int g = 5--
+  
+  let int h = -100 + 2
+}}

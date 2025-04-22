@@ -1,0 +1,5 @@
+{{
+  loop x in .list
+      print("value is #1",x.value)
+  end
+}}

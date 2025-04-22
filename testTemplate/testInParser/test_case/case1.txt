@@ -1,0 +1,9 @@
+{{
+  in .data1
+    .basic_data = 100
+  ni
+  
+  in .data2
+    .basic_data = 200
+  ni  
+}}

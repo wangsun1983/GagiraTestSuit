@@ -1,0 +1,15 @@
+{{
+  let bool a = true
+  let bool b = !a
+  
+  let bool c = a||b
+  let bool d = !a || b
+  
+  let bool e = false || false
+  let bool f = true || false
+  let bool g = true || true
+  
+  let bool h = true && true
+  let bool i = true && false
+  let bool j = false && false
+}}

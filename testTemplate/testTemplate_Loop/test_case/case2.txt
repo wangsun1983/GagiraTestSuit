@@ -1,0 +1,8 @@
+{{
+  let int v = 1
+  loop x,y in .map
+    x.value = v + 100
+    y.value = v + 100
+    v = v + 1
+  end
+}}

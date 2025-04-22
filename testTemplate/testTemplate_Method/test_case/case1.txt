@@ -1,0 +1,8 @@
+{{
+  let int v = 1
+  if (v > 1)
+    .value_large(1)
+  else
+    .value_small(2)
+  end
+}}

@@ -1,0 +1,12 @@
+{{
+    let int v = 100
+    if (v > 200)
+}}
+    ggcondition1
+{{
+    else 
+}}
+    fffcondition2
+{{
+    end
+}}

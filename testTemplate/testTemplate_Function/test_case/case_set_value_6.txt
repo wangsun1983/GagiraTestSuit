@@ -1,0 +1,9 @@
+{{
+  let int a = 2*2
+  let int b = 2/2
+  let int c = 5/2
+  let int d = 5%2
+  let int e = 2-5
+  let int f = 6>>2
+  let int g = 3<<2
+}}

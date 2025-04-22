@@ -1,0 +1,7 @@
+{{
+  loop int v = 1;v < .count;v++
+    loop int j = 1;j < .count;j++
+        .value = .value + 1
+    end
+  end
+}}

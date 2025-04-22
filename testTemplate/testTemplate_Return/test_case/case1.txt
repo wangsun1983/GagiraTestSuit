@@ -1,0 +1,6 @@
+{{
+  let int v = 1
+  return 100
+  v = v + 1
+  v
+}}

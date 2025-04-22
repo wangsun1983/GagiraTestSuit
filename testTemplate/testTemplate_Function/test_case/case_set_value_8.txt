@@ -1,0 +1,7 @@
+{{
+  let int a = (100 + 2)*3-8
+  let int b = (100*2)+3*(8-2)
+  let int c = a*(b+2) + b*a-3
+  let int d = c+2 + b*a-3
+  let int f = (d+2 + b)*a-3
+}}

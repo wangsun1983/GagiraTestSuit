@@ -1,0 +1,8 @@
+{{
+  let int v = 2
+  if (v > 1)
+    .value = 100
+  else
+    .value = 101
+  end
+}}

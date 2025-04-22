@@ -1,0 +1,15 @@
+{{
+    let int v = 100
+    v = v + 1
+    if (v > 100)
+        .value = 2
+}}
+    <br ggcondition1>
+{{
+    else 
+        .value = 3
+}}
+    <br fffcondition2>
+{{
+    end
+}}

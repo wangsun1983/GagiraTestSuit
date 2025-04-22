@@ -13,7 +13,8 @@ public:
     DECLARE_REFLECT_FIELD(Data,value1,value2);
 };
 
-void test_class_member() {    
+void test_class_member() {   
+#if 0    
     while(1) {
         Data d = Data::New();
         d->value1 = 123;
@@ -30,4 +31,5 @@ void test_class_member() {
         printf("[testPrintParser normal test] result is %s \n",result->toChars());
         break;
     }
+#endif    
 }

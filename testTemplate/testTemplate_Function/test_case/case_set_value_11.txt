@@ -1,0 +1,4 @@
+{{
+  let int v1 = .data
+  let int v2 = 100 + .data*2
+}}

@@ -1,0 +1,5 @@
+{{
+  let int v = 123
+  let int v2 = 222
+  let int v3 = 234
+}}

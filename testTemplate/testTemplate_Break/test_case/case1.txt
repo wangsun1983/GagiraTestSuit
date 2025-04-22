@@ -1,0 +1,8 @@
+{{
+  let int v = 100
+  loop int i = 1;i < 10;i++
+    break
+    v = v + 1
+  end
+  v
+}}

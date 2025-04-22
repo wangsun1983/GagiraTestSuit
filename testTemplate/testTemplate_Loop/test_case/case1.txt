@@ -1,0 +1,7 @@
+{{
+  let int v = 1
+  loop x in .list
+    x.value = v
+    v = v + 1
+  end
+}}
